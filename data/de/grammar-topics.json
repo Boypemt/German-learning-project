@@ -1,0 +1,72 @@
+[
+  {
+    "id": "g-articles",
+    "level": "A1",
+    "title": "Gender & articles (der / die / das)",
+    "explanation": "Every German noun has a gender: masculine (der Mann), feminine (die Frau), or neuter (das Kind). Gender is mostly arbitrary — ALWAYS learn nouns with their article. Useful patterns: -ung, -heit, -keit, -schaft → die; -chen, -lein → das; -er (people) → der. Plural article is always 'die'.",
+    "exercises": [
+      { "q": "___ Zeitung liegt auf dem Tisch. (newspaper)", "a": "Die", "hint": "-ung endings are feminine" },
+      { "q": "___ Mädchen spielt draußen. (girl)", "a": "Das", "hint": "-chen endings are neuter" },
+      { "q": "___ Lehrer erklärt die Grammatik. (teacher, m.)", "a": "Der", "hint": "male persons are masculine" },
+      { "q": "___ Freundschaft ist wichtig. (friendship)", "a": "Die", "hint": "-schaft endings are feminine" }
+    ]
+  },
+  {
+    "id": "g-verb2",
+    "level": "A1",
+    "title": "Verb position: the V2 rule",
+    "explanation": "In a German main clause the conjugated verb is ALWAYS in second position — no matter what comes first. 'Ich gehe heute ins Kino' and 'Heute gehe ich ins Kino' are both correct; 'Heute ich gehe...' is wrong. In yes/no questions the verb comes first: 'Gehst du ins Kino?'",
+    "exercises": [
+      { "q": "Reorder: 'morgen / ich / arbeite / nicht' →", "a": "Morgen arbeite ich nicht", "hint": "verb must be 2nd" },
+      { "q": "Reorder: 'du / kommst / heute / ?' →", "a": "Kommst du heute?", "hint": "questions start with verb" },
+      { "q": "Reorder: 'in Berlin / wohnt / meine Schwester' →", "a": "In Berlin wohnt meine Schwester", "hint": "verb 2nd, subject after" }
+    ]
+  },
+  {
+    "id": "g-akkusativ",
+    "level": "A1",
+    "title": "Accusative case (direct object)",
+    "explanation": "The direct object takes the accusative. Only masculine changes: der → den, ein → einen. Feminine, neuter, and plural stay the same. 'Ich sehe den Mann / die Frau / das Kind.' Prepositions that always take accusative: durch, für, gegen, ohne, um (DOGFU).",
+    "exercises": [
+      { "q": "Ich kaufe ___ Apfel. (der Apfel)", "a": "den", "hint": "masculine direct object" },
+      { "q": "Das Geschenk ist für ___ Lehrer. (der Lehrer)", "a": "den", "hint": "'für' always takes accusative" },
+      { "q": "Wir sehen ___ Film. (der Film)", "a": "den", "hint": "masculine direct object" },
+      { "q": "Er hat ___ Frage. (eine Frage)", "a": "eine", "hint": "feminine doesn't change" }
+    ]
+  },
+  {
+    "id": "g-dativ",
+    "level": "A2",
+    "title": "Dative case (indirect object)",
+    "explanation": "The indirect object (to/for whom) takes the dative: der/das → dem, die → der, plural → den (+n on the noun). 'Ich gebe dem Mann das Buch.' Prepositions that always take dative: aus, bei, mit, nach, seit, von, zu. Common dative verbs: helfen, danken, gefallen, gehören.",
+    "exercises": [
+      { "q": "Ich helfe ___ Frau. (die Frau)", "a": "der", "hint": "'helfen' takes dative; die → der" },
+      { "q": "Wir fahren mit ___ Bus. (der Bus)", "a": "dem", "hint": "'mit' always dative" },
+      { "q": "Das Auto gehört ___ Kind. (das Kind)", "a": "dem", "hint": "'gehören' takes dative" },
+      { "q": "Sie kommt aus ___ Schweiz. (die Schweiz)", "a": "der", "hint": "'aus' always dative" }
+    ]
+  },
+  {
+    "id": "g-perfekt",
+    "level": "A2",
+    "title": "Perfekt (spoken past tense)",
+    "explanation": "Spoken German uses the Perfekt for the past: haben/sein + past participle at the END. 'Ich habe Pizza gegessen.' Use 'sein' for movement or change of state (gehen, fahren, kommen, aufstehen): 'Ich bin nach Berlin gefahren.' Regular participles: ge- + stem + -t (gemacht). Strong verbs: ge- + stem + -en (gegessen).",
+    "exercises": [
+      { "q": "Ich ___ gestern viel gearbeitet. (haben/sein)", "a": "habe", "hint": "arbeiten = no movement" },
+      { "q": "Sie ___ um acht Uhr aufgestanden. (haben/sein)", "a": "ist", "hint": "change of state → sein" },
+      { "q": "Wir ___ nach München gefahren. (haben/sein)", "a": "sind", "hint": "movement → sein" },
+      { "q": "Participle of 'kaufen':", "a": "gekauft", "hint": "regular: ge- + -t" }
+    ]
+  },
+  {
+    "id": "g-nebensatz",
+    "level": "B1",
+    "title": "Subordinate clauses (verb goes last)",
+    "explanation": "After weil, dass, wenn, ob, obwohl, als, etc., the conjugated verb moves to the END of the clause: 'Ich bleibe zu Hause, weil ich krank bin.' If the sentence STARTS with the subordinate clause, the main clause verb comes immediately after the comma: 'Weil ich krank bin, bleibe ich zu Hause.'",
+    "exercises": [
+      { "q": "Ich lerne Deutsch, weil ich in Deutschland arbeiten ___. (wollen)", "a": "will", "hint": "verb last in weil-clause" },
+      { "q": "Er sagt, dass er keine Zeit ___. (haben)", "a": "hat", "hint": "verb last in dass-clause" },
+      { "q": "Wenn es regnet, ___ wir zu Hause. (bleiben)", "a": "bleiben", "hint": "main clause verb right after comma" }
+    ]
+  }
+]

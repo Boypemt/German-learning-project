@@ -1,0 +1,12 @@
+[
+  { "id": "w-01", "level": "A1", "prompt": "Stell dich vor: Name, Herkunft, Beruf, Hobbys. (3–5 Sätze)", "promptEn": "Introduce yourself: name, origin, job, hobbies. (3–5 sentences)" },
+  { "id": "w-02", "level": "A1", "prompt": "Beschreibe deinen Tagesablauf von morgens bis abends.", "promptEn": "Describe your daily routine from morning to evening." },
+  { "id": "w-03", "level": "A1", "prompt": "Was isst und trinkst du gern? Was magst du nicht?", "promptEn": "What do you like to eat and drink? What don't you like?" },
+  { "id": "w-04", "level": "A2", "prompt": "Schreibe eine E-Mail an einen Freund: Lade ihn zu deiner Party ein (wann, wo, was mitbringen).", "promptEn": "Write an email to a friend: invite them to your party (when, where, what to bring)." },
+  { "id": "w-05", "level": "A2", "prompt": "Was hast du letztes Wochenende gemacht? (Perfekt benutzen!)", "promptEn": "What did you do last weekend? (Use the Perfekt tense!)" },
+  { "id": "w-06", "level": "A2", "prompt": "Beschreibe deine Wohnung oder dein Traumhaus.", "promptEn": "Describe your apartment or your dream house." },
+  { "id": "w-07", "level": "B1", "prompt": "Warum lernst du Deutsch? Was sind deine Ziele? Begründe mit 'weil' und 'damit'.", "promptEn": "Why are you learning German? What are your goals? Justify with 'weil' and 'damit'." },
+  { "id": "w-08", "level": "B1", "prompt": "Vorteile und Nachteile von Homeoffice — was ist deine Meinung?", "promptEn": "Advantages and disadvantages of working from home — what is your opinion?" },
+  { "id": "w-09", "level": "B2", "prompt": "Schreibe eine formelle Bewerbungs-E-Mail für eine Stelle in Deutschland (Anrede, Interesse, Qualifikationen, Grußformel).", "promptEn": "Write a formal job application email for a position in Germany (salutation, interest, qualifications, closing)." },
+  { "id": "w-10", "level": "B2", "prompt": "Sollten alle Menschen eine Fremdsprache lernen müssen? Argumentiere dafür und dagegen.", "promptEn": "Should everyone be required to learn a foreign language? Argue for and against." }
+]
