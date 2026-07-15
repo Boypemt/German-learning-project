@@ -14,8 +14,10 @@
 
 ## Phase 2 — Real content at scale
 
-- [ ] `scripts/import-frequency.ts` — build 5,000-word deck from OpenSubtitles/Leipzig frequency lists, enriched with gender/plural/IPA from kaikki.org Wiktionary data
-- [ ] `scripts/import-tatoeba.ts` — pull German↔English sentence pairs (with audio links) into listening decks by level
+- [x] Hand-written decks for every level: ~250 vocab items A1–C2, ~90 sentences A1–C2, 21 grammar topics A1–C2, 17 writing prompts A1–C2
+- [x] All content level-aware (`lib/content.ts`): vocab starts at your level, sentences at level & level+1 (i+1 input), grammar sorted to your level
+- [x] `scripts/import-tatoeba.mjs` — run `npm run import:tatoeba` locally to pull ~2,000+ real German↔English sentences (CC BY, Tatoeba) into the listening/speaking pool
+- [ ] `scripts/import-frequency.ts` — build 5,000-word deck from OpenSubtitles/Leipzig frequency lists, enriched with gender/plural/IPA from kaikki.org Wiktionary data (best done with Claude Code: generate, then batch-translate/verify)
 - [ ] Cloze cards: learn vocab inside Tatoeba sentences instead of isolated words
 - [ ] Grammar: full A1→C1 topic tree (adapt from Grimm Grammar / Wikibooks, CC licenses)
 - [ ] Native audio: use Wiktionary/Lingua Libre recordings where available, Piper TTS (Thorsten voice) pre-generated mp3s otherwise

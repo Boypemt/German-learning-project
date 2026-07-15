@@ -3,9 +3,9 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import vocab from "@/data/de/vocab-a1.json";
 import culture from "@/data/de/culture.json";
-import { stats, type VocabItem } from "@/lib/srs";
+import { getVocabDeck } from "@/lib/content";
+import { stats } from "@/lib/srs";
 import { getStreak, getTodayCount, getTodaySkillCounts } from "@/lib/storage";
 import { getXp, getLevel } from "@/lib/gamify";
 import { getBalance, getOwned, ITEMS } from "@/lib/garden";
@@ -13,8 +13,6 @@ import { loadProfile, generatePlan, type Profile, type PlanStep } from "@/lib/pr
 import { OpaSays } from "@/components/Opa";
 import Say from "@/components/Say";
 import { speak } from "@/lib/speech";
-
-const deck = vocab as VocabItem[];
 
 interface CultureNote { id: string; emoji: string; title: string; text: string; phrase: string; phraseEn: string; }
 const notes = culture as CultureNote[];
@@ -36,7 +34,7 @@ export default function Dashboard() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [plan, setPlan] = useState<PlanStep[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
-  const [s, setS] = useState({ total: deck.length, seen: 0, dueNow: 0 });
+  const [s, setS] = useState({ total: 0, seen: 0, dueNow: 0 });
   const [streak, setStreak] = useState(0);
   const [today, setToday] = useState(0);
   const [xp, setXp] = useState(0);
@@ -54,7 +52,7 @@ export default function Dashboard() {
     setProfile(p);
     setPlan(generatePlan(p));
     setCounts(getTodaySkillCounts());
-    setS(stats("de", deck));
+    setS(stats("de", getVocabDeck(p.level)));
     setStreak(getStreak());
     setToday(getTodayCount());
     setXp(getXp());

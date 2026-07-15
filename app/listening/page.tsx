@@ -1,14 +1,12 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import sentencesData from "@/data/de/sentences-a1.json";
+import { useEffect, useRef, useState } from "react";
+import { getSentences, type Sentence } from "@/lib/content";
+import { loadProfile } from "@/lib/profile";
 import Umlauts from "@/components/Umlauts";
 import { speak, normalize, similarity } from "@/lib/speech";
 import { recordActivity } from "@/lib/storage";
 import { praise, encourage } from "@/components/Opa";
-
-interface Sentence { id: string; de: string; en: string; level: string; }
-const sentences = sentencesData as Sentence[];
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -31,7 +29,7 @@ function WordDiff({ target, attempt }: { target: string; attempt: string }) {
 }
 
 export default function ListeningPage() {
-  const order = useMemo(() => shuffle(sentences), []);
+  const [order, setOrder] = useState<Sentence[]>([]);
   const [idx, setIdx] = useState(0);
   const [val, setVal] = useState("");
   const [checked, setChecked] = useState(false);
@@ -39,6 +37,12 @@ export default function ListeningPage() {
   const [attempts, setAttempts] = useState(0);
   const [line, setLine] = useState<[string, string]>(["", ""]);
   const inRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setOrder(shuffle(getSentences(loadProfile()?.level ?? "A0")));
+  }, []);
+
+  if (order.length === 0) return <p className="muted">Loading…</p>;
 
   const s = order[idx % order.length];
   const sim = checked ? similarity(s.de, val) : 0;

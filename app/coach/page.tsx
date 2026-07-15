@@ -6,15 +6,13 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import vocab from "@/data/de/vocab-a1.json";
+import { getVocabDeck } from "@/lib/content";
 import { loadProfile, LEVEL_LABELS, type Profile } from "@/lib/profile";
 import { load, save, getStreak, getWeekSkillCounts } from "@/lib/storage";
 import { getTotalReviews } from "@/lib/gamify";
-import { stats, type VocabItem } from "@/lib/srs";
+import { stats } from "@/lib/srs";
 import { buildCoachPrompt, askClaude, type CoachData } from "@/lib/ai";
 import { OpaSays } from "@/components/Opa";
-
-const deck = vocab as VocabItem[];
 
 export default function CoachPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -31,7 +29,7 @@ export default function CoachPage() {
     setApiKey(load<string>("coach:key", ""));
     setAdvice(load<string>("coach:advice", ""));
     if (p) {
-      const st = stats("de", deck);
+      const st = stats("de", getVocabDeck(p.level));
       setData({
         profile: p,
         streak: getStreak(),

@@ -1,13 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import sentencesData from "@/data/de/sentences-a1.json";
+import { useEffect, useState } from "react";
+import { getSentences, type Sentence } from "@/lib/content";
+import { loadProfile } from "@/lib/profile";
 import { speak, getRecognition, normalize, similarity } from "@/lib/speech";
 import { recordActivity } from "@/lib/storage";
 import { praise, encourage } from "@/components/Opa";
-
-interface Sentence { id: string; de: string; en: string; level: string; }
-const sentences = sentencesData as Sentence[];
 
 function WordMatch({ target, heard }: { target: string; heard: string }) {
   const heardSet = new Set(normalize(heard).split(" "));
@@ -26,7 +24,7 @@ function WordMatch({ target, heard }: { target: string; heard: string }) {
 }
 
 export default function SpeakingPage() {
-  const order = useMemo(() => [...sentences], []);
+  const [order, setOrder] = useState<Sentence[]>([]);
   const [idx, setIdx] = useState(0);
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
@@ -34,10 +32,15 @@ export default function SpeakingPage() {
   const [best, setBest] = useState(0); // best similarity this sentence
   const [line, setLine] = useState<[string, string]>(["", ""]);
 
-  const s = order[idx % order.length];
-  const sim = heard !== null ? similarity(s.de, heard) : null;
+  useEffect(() => {
+    setOrder(getSentences(loadProfile()?.level ?? "A0"));
+  }, []);
+
+  const s = order.length > 0 ? order[idx % order.length] : null;
+  const sim = heard !== null && s ? similarity(s.de, heard) : null;
 
   function record() {
+    if (!s) return;
     setError(null);
     setHeard(null);
     const rec = getRecognition("de-DE");
@@ -48,7 +51,7 @@ export default function SpeakingPage() {
     rec.onresult = (e) => {
       const t = e.results[0][0].transcript;
       setHeard(t);
-      const sc = similarity(s.de, t);
+      const sc = similarity(s!.de, t);
       if (sc > best) setBest(sc);
       setLine(sc >= 0.8 ? praise() : encourage());
       if (sc >= 0.8) recordActivity("speaking");
@@ -65,6 +68,8 @@ export default function SpeakingPage() {
     setError(null);
     setBest(0);
   }
+
+  if (!s) return <p className="muted">Loading…</p>;
 
   return (
     <>

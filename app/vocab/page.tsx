@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import vocabData from "@/data/de/vocab-a1.json";
+import { getVocabDeck } from "@/lib/content";
+import { loadProfile } from "@/lib/profile";
 import { buildQueue, review, Rating, type VocabItem } from "@/lib/srs";
 import { recordActivity } from "@/lib/storage";
 import { speak } from "@/lib/speech";
@@ -9,8 +10,6 @@ import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
 import { Opa, praise } from "@/components/Opa";
 import type { Grade } from "ts-fsrs";
-
-const deck = vocabData as VocabItem[];
 
 const CONFETTI = ["🎉", "⭐", "✨", "🎊", "💛"];
 
@@ -23,6 +22,7 @@ export default function VocabPage() {
   const [ready, setReady] = useState(false);
 
   const loadSession = useCallback(() => {
+    const deck = getVocabDeck(loadProfile()?.level ?? "A0");
     const { due, fresh } = buildQueue("de", deck, 10);
     const q = [...due, ...fresh];
     setQueue(q);

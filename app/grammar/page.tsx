@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import topicsData from "@/data/de/grammar-topics.json";
 import { normalize } from "@/lib/speech";
 import { load, save, recordActivity } from "@/lib/storage";
+import { sortByLevel } from "@/lib/content";
+import { loadProfile } from "@/lib/profile";
 import { praise, encourage } from "@/components/Opa";
 import Say from "@/components/Say";
 
@@ -63,8 +65,12 @@ function ExerciseBlock({ ex, exId, isDone, onDone }: {
 export default function GrammarPage() {
   const [open, setOpen] = useState<string | null>(null);
   const [doneMap, setDoneMap] = useState<DoneMap>({});
+  const [topicList, setTopicList] = useState<Topic[]>(topics);
 
-  useEffect(() => { setDoneMap(load<DoneMap>("grammar:done", {})); }, []);
+  useEffect(() => {
+    setDoneMap(load<DoneMap>("grammar:done", {}));
+    setTopicList(sortByLevel(topics, loadProfile()?.level ?? "A0"));
+  }, []);
 
   function markDone(exId: string) {
     setDoneMap((m) => {
@@ -88,7 +94,7 @@ export default function GrammarPage() {
       <div className="progressbar gold"><div style={{ width: `${(totalDone / totalEx) * 100}%` }} /></div>
       <p className="muted small">{totalDone}/{totalEx} exercises mastered · one topic per day is plenty</p>
 
-      {topics.map((t, i) => {
+      {topicList.map((t, i) => {
         const prog = topicProgress(t);
         const complete = prog.done === prog.total;
         return (

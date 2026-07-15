@@ -23,6 +23,18 @@
     ]
   },
   {
+    "id": "g-praesens",
+    "level": "A1",
+    "title": "Present tense & irregular verbs",
+    "explanation": "Regular: ich mache, du machst, er macht, wir machen, ihr macht, sie machen. Many common verbs change their stem vowel in du/er forms: fahren → du fährst, er fährt; sprechen → du sprichst; lesen → du liest; nehmen → du nimmst. 'sein' and 'haben' are fully irregular — memorize them first.",
+    "exercises": [
+      { "q": "du ___ (fahren) morgen nach Köln", "a": "fährst", "hint": "a → ä in du-form" },
+      { "q": "er ___ (sprechen) drei Sprachen", "a": "spricht", "hint": "e → i" },
+      { "q": "sie ___ (lesen) gern Romane (she)", "a": "liest", "hint": "e → ie" },
+      { "q": "ihr ___ (sein) zu spät", "a": "seid", "hint": "irregular — memorize" }
+    ]
+  },
+  {
     "id": "g-akkusativ",
     "level": "A1",
     "title": "Accusative case (direct object)",
@@ -32,6 +44,17 @@
       { "q": "Das Geschenk ist für ___ Lehrer. (der Lehrer)", "a": "den", "hint": "'für' always takes accusative" },
       { "q": "Wir sehen ___ Film. (der Film)", "a": "den", "hint": "masculine direct object" },
       { "q": "Er hat ___ Frage. (eine Frage)", "a": "eine", "hint": "feminine doesn't change" }
+    ]
+  },
+  {
+    "id": "g-trennbar",
+    "level": "A1",
+    "title": "Separable verbs (aufstehen, einkaufen…)",
+    "explanation": "Many verbs have a prefix that splits off and goes to the END of the sentence: aufstehen → 'Ich stehe um sieben auf.' Common separable prefixes: an-, auf-, aus-, ein-, mit-, nach-, vor-, zu-. In the Perfekt the 'ge' goes between: aufgestanden, eingekauft.",
+    "exercises": [
+      { "q": "Ich ___ jeden Tag um sechs ___. (aufstehen)", "a": "stehe auf", "hint": "prefix goes to the end" },
+      { "q": "Wir ___ am Samstag ___. (einkaufen)", "a": "kaufen ein", "hint": "prefix goes to the end" },
+      { "q": "___ du heute Abend ___? (mitkommen)", "a": "Kommst mit", "hint": "verb first (question), prefix last" }
     ]
   },
   {
@@ -59,6 +82,42 @@
     ]
   },
   {
+    "id": "g-modalverben",
+    "level": "A2",
+    "title": "Modal verbs (können, müssen, dürfen…)",
+    "explanation": "Modal verbs pair with an infinitive at the END: 'Ich kann gut schwimmen.' Meanings: können (ability), müssen (necessity), dürfen (permission), sollen (obligation/advice), wollen (want), möchten (would like). Note: 'Ich muss nicht' = I don't have to (NOT 'must not' — that's 'darf nicht').",
+    "exercises": [
+      { "q": "Hier ___ man nicht rauchen. (permission)", "a": "darf", "hint": "dürfen = to be allowed" },
+      { "q": "Ich ___ heute lange arbeiten. (necessity)", "a": "muss", "hint": "müssen = must" },
+      { "q": "___ du mir bitte helfen? (ability)", "a": "Kannst", "hint": "können = can" },
+      { "q": "Der Arzt sagt, ich ___ mehr schlafen. (advice)", "a": "soll", "hint": "sollen = should" }
+    ]
+  },
+  {
+    "id": "g-wechselpraep",
+    "level": "A2",
+    "title": "Two-way prepositions (in, auf, an…)",
+    "explanation": "Nine prepositions take accusative OR dative: in, an, auf, über, unter, vor, hinter, neben, zwischen. Movement toward → accusative (wohin?): 'Ich gehe in die Küche.' Location → dative (wo?): 'Ich bin in der Küche.'",
+    "exercises": [
+      { "q": "Ich lege das Buch auf ___ Tisch. (der Tisch)", "a": "den", "hint": "movement → accusative" },
+      { "q": "Das Buch liegt auf ___ Tisch. (der Tisch)", "a": "dem", "hint": "location → dative" },
+      { "q": "Wir gehen heute ___ Kino. (das Kino)", "a": "ins", "hint": "in + das = ins (movement)" },
+      { "q": "Sie wartet vor ___ Tür. (die Tür)", "a": "der", "hint": "location → dative" }
+    ]
+  },
+  {
+    "id": "g-komparativ",
+    "level": "A2",
+    "title": "Comparative & superlative",
+    "explanation": "Comparative: adjective + -er (+ als): 'schneller als'. Superlative: am + adjective + -sten: 'am schnellsten'. Short adjectives often take umlaut: alt → älter, groß → größer, jung → jünger. Irregular: gut → besser → am besten; gern → lieber → am liebsten; viel → mehr → am meisten.",
+    "exercises": [
+      { "q": "Berlin ist ___ als Bonn. (groß)", "a": "größer", "hint": "umlaut + -er" },
+      { "q": "Deutsch gefällt mir ___ als Mathe. (gern)", "a": "besser", "hint": "irregular: gern → lieber... but 'gefallen' → besser" },
+      { "q": "Der ICE fährt am ___. (schnell)", "a": "schnellsten", "hint": "am + -sten" },
+      { "q": "Ich trinke ___ Tee als Kaffee. (gern)", "a": "lieber", "hint": "gern → lieber" }
+    ]
+  },
+  {
     "id": "g-nebensatz",
     "level": "B1",
     "title": "Subordinate clauses (verb goes last)",
@@ -67,6 +126,126 @@
       { "q": "Ich lerne Deutsch, weil ich in Deutschland arbeiten ___. (wollen)", "a": "will", "hint": "verb last in weil-clause" },
       { "q": "Er sagt, dass er keine Zeit ___. (haben)", "a": "hat", "hint": "verb last in dass-clause" },
       { "q": "Wenn es regnet, ___ wir zu Hause. (bleiben)", "a": "bleiben", "hint": "main clause verb right after comma" }
+    ]
+  },
+  {
+    "id": "g-praeteritum",
+    "level": "B1",
+    "title": "Präteritum (written past)",
+    "explanation": "Written/narrative German uses the Präteritum: 'Er ging nach Hause und sah den Brief.' In speech it's mainly used for sein (war), haben (hatte), and modals (konnte, musste, wollte). Regular verbs: -te endings (machte); strong verbs change the stem (gehen → ging, sehen → sah, kommen → kam).",
+    "exercises": [
+      { "q": "Als Kind ___ ich in München. (wohnen)", "a": "wohnte", "hint": "regular: -te" },
+      { "q": "Gestern ___ ich keine Zeit. (haben)", "a": "hatte", "hint": "haben → hatte" },
+      { "q": "Er ___ um Mitternacht nach Hause. (kommen)", "a": "kam", "hint": "strong verb: o → a" },
+      { "q": "Sie ___ nicht schwimmen. (können)", "a": "konnte", "hint": "modal, no umlaut in Präteritum" }
+    ]
+  },
+  {
+    "id": "g-reflexiv",
+    "level": "B1",
+    "title": "Reflexive verbs & pronouns",
+    "explanation": "Many verbs need a reflexive pronoun: sich freuen, sich erinnern, sich bewerben. Accusative: mich, dich, sich, uns, euch, sich. If there's another direct object, the pronoun becomes dative: 'Ich wasche mir die Hände' (not mich). Watch the fixed prepositions: sich freuen AUF (future) / ÜBER (present).",
+    "exercises": [
+      { "q": "Ich freue ___ auf das Wochenende.", "a": "mich", "hint": "accusative reflexive" },
+      { "q": "Er erinnert ___ nicht an mich.", "a": "sich", "hint": "3rd person → sich" },
+      { "q": "Ich putze ___ die Zähne.", "a": "mir", "hint": "another object (die Zähne) → dative" },
+      { "q": "Wir bewerben ___ um die Stelle.", "a": "uns", "hint": "1st person plural" }
+    ]
+  },
+  {
+    "id": "g-genitiv",
+    "level": "B1",
+    "title": "Genitive case (possession)",
+    "explanation": "Shows possession: der/das → des (+s/es on the noun), die → der. 'das Auto des Mannes', 'die Tasche der Frau'. Genitive prepositions: während, wegen, trotz, statt. Spoken German often replaces it with von + dative, but written and professional German expects the genitive.",
+    "exercises": [
+      { "q": "Das ist das Büro ___ Chefs. (der Chef)", "a": "des", "hint": "masculine → des + s" },
+      { "q": "Wegen ___ Wetters bleiben wir hier. (das Wetter)", "a": "des", "hint": "wegen + genitive" },
+      { "q": "Die Farbe ___ Blumen gefällt mir. (die Blumen, pl.)", "a": "der", "hint": "plural genitive → der" },
+      { "q": "Trotz ___ Regens gingen wir spazieren. (der Regen)", "a": "des", "hint": "trotz + genitive" }
+    ]
+  },
+  {
+    "id": "g-adjektivendungen",
+    "level": "B1",
+    "title": "Adjective endings",
+    "explanation": "Adjectives before nouns take endings depending on article, gender, and case. After der/die/das: mostly -e or -en ('der gute Mann', 'den guten Mann'). After ein: the adjective shows the gender ('ein guter Mann', 'ein gutes Kind'). Without article: adjective takes the article's ending ('guter Wein'). This becomes automatic through INPUT — read a lot and check your writing.",
+    "exercises": [
+      { "q": "der ___ Kaffee schmeckt gut (schwarz)", "a": "schwarze", "hint": "after der: -e" },
+      { "q": "ich trinke den ___ Kaffee (schwarz)", "a": "schwarzen", "hint": "masculine accusative: -en" },
+      { "q": "ein ___ Mann wartet draußen (alt)", "a": "alter", "hint": "ein + masculine: adjective shows -er" },
+      { "q": "ich hätte gern ___ Wasser (kalt, no article)", "a": "kaltes", "hint": "no article: adjective takes das-ending" }
+    ]
+  },
+  {
+    "id": "g-passiv",
+    "level": "B2",
+    "title": "Passive voice (werden + Partizip II)",
+    "explanation": "Process passive: werden + past participle: 'Das Haus wird gebaut' (is being built). Past: 'wurde gebaut'; Perfekt: 'ist gebaut worden'. State passive (result): sein + participle: 'Das Haus ist gebaut' (is finished). With modals: 'Der Vertrag muss unterschrieben werden.' The agent takes 'von': 'vom Chef unterschrieben'.",
+    "exercises": [
+      { "q": "Der Brief ___ gestern geschickt. (werden, Präteritum)", "a": "wurde", "hint": "passive past: wurde" },
+      { "q": "Das Formular muss ausgefüllt ___.", "a": "werden", "hint": "modal + participle + werden" },
+      { "q": "Die Rechnung ist schon bezahlt ___. (Perfekt Passiv)", "a": "worden", "hint": "ist + Partizip + worden" },
+      { "q": "Das Essen ___ vom Koch zubereitet. (werden, Präsens)", "a": "wird", "hint": "present passive" }
+    ]
+  },
+  {
+    "id": "g-konjunktiv2",
+    "level": "B2",
+    "title": "Konjunktiv II (would, hypothetical, polite)",
+    "explanation": "For hypotheticals, wishes, and politeness. Most verbs: würde + infinitive ('Ich würde gern kommen'). Common verbs have own forms: wäre, hätte, könnte, müsste, sollte, wüsste, käme, ginge. Past hypothetical: hätte/wäre + participle: 'Ich hätte das gemacht' (I would have done it). Politeness: 'Könnten Sie…?', 'Ich hätte gern…'.",
+    "exercises": [
+      { "q": "Wenn ich reich ___, würde ich viel reisen. (sein)", "a": "wäre", "hint": "sein → wäre" },
+      { "q": "___ Sie mir bitte helfen? (können, polite)", "a": "Könnten", "hint": "polite request" },
+      { "q": "An deiner Stelle ___ ich früher schlafen gehen. (werden)", "a": "würde", "hint": "advice: würde + infinitive" },
+      { "q": "Ich ___ das gewusst, wenn du es mir gesagt hättest. (haben)", "a": "hätte", "hint": "past hypothetical" }
+    ]
+  },
+  {
+    "id": "g-relativsatz",
+    "level": "B2",
+    "title": "Relative clauses (der, die, das, dessen…)",
+    "explanation": "Relative pronouns match the noun's gender/number but take their case from their role in the clause: 'Der Mann, DER dort steht' (subject), 'der Mann, DEN ich kenne' (object), 'der Mann, DEM ich helfe' (dative), 'der Mann, DESSEN Auto…' (genitive). The verb goes to the end of the relative clause.",
+    "exercises": [
+      { "q": "Die Frau, ___ ich geholfen habe, ist Ärztin.", "a": "der", "hint": "helfen + dative, feminine → der" },
+      { "q": "Das Buch, ___ du mir empfohlen hast, ist super.", "a": "das", "hint": "neuter accusative" },
+      { "q": "Der Kollege, ___ Büro nebenan ist, kommt aus Wien.", "a": "dessen", "hint": "possession → genitive" },
+      { "q": "Die Leute, mit ___ wir arbeiten, sind nett.", "a": "denen", "hint": "mit + dative plural" }
+    ]
+  },
+  {
+    "id": "g-nominalisierung",
+    "level": "C1",
+    "title": "Nominalization (Nominalstil)",
+    "explanation": "Formal German turns verbs into nouns: 'weil die Firma umzieht' → 'wegen des Umzugs der Firma'. Key transformations: verb → -ung noun (prüfen → die Prüfung), infinitive as noun (das Lernen), wenn-clause → bei + noun ('bei Regen'). Essential for C1 writing and official correspondence — but don't overdo it in speech.",
+    "exercises": [
+      { "q": "Nominalize: 'bevor er ankommt' → vor seiner ___", "a": "Ankunft", "hint": "ankommen → die Ankunft" },
+      { "q": "Nominalize: 'wenn es regnet' → bei ___", "a": "Regen", "hint": "bei + noun" },
+      { "q": "Nominalize: 'weil die Kosten steigen' → wegen der steigenden ___", "a": "Kosten", "hint": "participle + noun" },
+      { "q": "Nominalize: 'nachdem der Vertrag unterschrieben wurde' → nach der ___ des Vertrags", "a": "Unterschrift", "hint": "unterschreiben → die Unterschrift" }
+    ]
+  },
+  {
+    "id": "g-konjunktiv1",
+    "level": "C1",
+    "title": "Konjunktiv I (indirect speech)",
+    "explanation": "News and formal reports use Konjunktiv I for reported speech: 'Er sagte, er SEI krank / er HABE keine Zeit / er KOMME morgen.' Forms come from the infinitive stem + e-endings: sein → sei/seien, haben → habe, kommen → komme. Where Konjunktiv I equals the indicative, Konjunktiv II steps in: 'sie hätten' instead of 'sie haben'.",
+    "exercises": [
+      { "q": "Er sagte, er ___ krank. (sein)", "a": "sei", "hint": "sein → sei" },
+      { "q": "Die Ministerin erklärte, sie ___ keine Zeit. (haben)", "a": "habe", "hint": "haben → habe" },
+      { "q": "Der Sprecher betonte, man ___ das Problem. (kennen)", "a": "kenne", "hint": "stem + e" },
+      { "q": "Sie sagten, sie ___ morgen. (kommen — K I = indicative, use K II)", "a": "kämen", "hint": "plural: Konjunktiv II replaces" }
+    ]
+  },
+  {
+    "id": "g-partizipialattribute",
+    "level": "C2",
+    "title": "Extended participle constructions",
+    "explanation": "Academic and legal German packs whole clauses before a noun: 'die von der Regierung im letzten Jahr beschlossenen Maßnahmen' = 'die Maßnahmen, die von der Regierung im letzten Jahr beschlossen wurden'. Partizip I (+ -d) = active/ongoing ('die steigenden Preise'); Partizip II = passive/completed ('das geschriebene Wort'). Learn to unpack them when reading and deploy them sparingly in formal writing.",
+    "exercises": [
+      { "q": "Umformen: 'die Preise, die steigen' → die ___ Preise", "a": "steigenden", "hint": "Partizip I + ending" },
+      { "q": "Umformen: 'der Brief, der gestern geschrieben wurde' → der gestern ___ Brief", "a": "geschriebene", "hint": "Partizip II + ending" },
+      { "q": "Umformen: 'die Regel, die oft zitiert wird' → die oft ___ Regel", "a": "zitierte", "hint": "Partizip II" },
+      { "q": "Umformen: 'das Kind, das lacht' → das ___ Kind", "a": "lachende", "hint": "Partizip I: -end + e" }
     ]
   }
 ]
