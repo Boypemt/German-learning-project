@@ -9,11 +9,11 @@ export type Goal = "B1" | "B2" | "C1" | "C2";
 export type SkillId = "vocab" | "grammar" | "listening" | "speaking" | "writing";
 
 export interface Profile {
-  level: Level;       // where you are now (self-assessed)
-  goal: Goal;         // where you want to get — up to C2
-  goalWhy: string;    // work / study / life / mastery
+  level: Level;
+  goal: Goal;
+  goalWhy: string;
   minutes: 15 | 30 | 60;
-  focus: SkillId[];   // skills the learner cares most about
+  focus: SkillId[];
   createdAt: string;
 }
 
@@ -31,7 +31,7 @@ export interface PlanStep {
   icon: string;
   label: string;
   sub: string;
-  target: number; // reviews/exercises/sentences/drafts needed to check it off
+  target: number;
 }
 
 const META: Record<SkillId, { href: string; icon: string; label: string }> = {
@@ -40,7 +40,7 @@ const META: Record<SkillId, { href: string; icon: string; label: string }> = {
   listening: { href: "/listening", icon: "🎧", label: "Listening" },
   speaking: { href: "/speaking", icon: "🎙️", label: "Speaking" },
   writing: { href: "/writing", icon: "✍️", label: "Writing" },
-];
+};
 
 const TARGETS: Record<SkillId, Record<15 | 30 | 60, number>> = {
   vocab: { 15: 10, 30: 15, 60: 25 },
@@ -59,7 +59,7 @@ const SUBS: Record<SkillId, (n: number) => string> = {
 };
 
 export function generatePlan(p: Profile): PlanStep[] {
-  // Vocab always comes first (spaced repetition waits for no one),
+  // Vocab always first (spaced repetition waits for no one),
   // then the learner's focus skills, then the rest.
   const order: SkillId[] = ["vocab", "speaking", "listening", "grammar", "writing"];
   const sorted = [
@@ -73,7 +73,6 @@ export function generatePlan(p: Profile): PlanStep[] {
       let target = TARGETS[skill][p.minutes];
       // absolute beginners: pronunciation before writing
       if (skill === "writing" && p.level === "A0" && !p.focus.includes("writing")) target = 0;
-      // short sessions still get grammar if it's a focus
       if (skill === "grammar" && target === 0 && p.focus.includes("grammar")) target = 2;
       if (skill === "writing" && target === 0 && p.focus.includes("writing")) target = 1;
       // focused skills get ~50% more

@@ -51,7 +51,7 @@ export default function VocabPage() {
     });
   }, [queue]);
 
-  // keyboard shortcuts: space = reveal/listen, 1-4 = grade
+  // keyboard shortcuts: space/enter = flip, 1-4 = grade
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if (!item) return;

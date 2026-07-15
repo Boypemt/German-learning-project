@@ -80,7 +80,6 @@ export default function Dashboard() {
         size={92}
       />
 
-      {/* today's plan — the "what do I do now" answer */}
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <strong style={{ fontSize: 16 }}>📋 Dein Plan heute ({profile.minutes} min · goal {profile.goal})</strong>

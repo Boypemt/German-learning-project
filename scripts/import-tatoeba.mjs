@@ -15,7 +15,10 @@ import { spawnSync } from "node:child_process";
 
 const PAIRS_URL =
   "https://www.manythings.org/anki/deu-eng.zip"; // Tatoeba-derived DE-EN pairs, one TSV
-const MAX_SENTENCES = 3000;
+
+// per-level quotas — the source file is sorted short→long, so we must scan
+// ALL of it and fill buckets, not just take the first N lines
+const QUOTA = { A1: 400, A2: 400, B1: 400, B2: 400, C1: 300, C2: 200 };
 
 // crude CEFR heuristic: sentence length + comma depth
 function guessLevel(de) {
@@ -50,37 +53,35 @@ async function main() {
 
   const raw = await readFile(join(tmp, "deu.txt"), "utf8");
   const seen = new Set();
-  const out = [];
+  const buckets = Object.fromEntries(Object.keys(QUOTA).map((k) => [k, []]));
+  const full = () => Object.entries(QUOTA).every(([k, n]) => buckets[k].length >= n);
 
   for (const line of raw.split("\n")) {
     const [en, de] = line.split("\t");
     if (!de || !en) continue;
     // quality filters: reasonable length, no quotes/parentheses, ends with punctuation
-    if (de.length < 15 || de.length > 160) continue;
+    if (de.length < 15 || de.length > 180) continue;
     if (/["()\[\]«»]/.test(de)) continue;
     if (!/[.!?]$/.test(de.trim())) continue;
     const key = de.toLowerCase();
     if (seen.has(key)) continue;
     seen.add(key);
-    out.push({ id: `tato-${out.length + 1}`, de: de.trim(), en: en.trim(), level: guessLevel(de) });
-    if (out.length >= MAX_SENTENCES) break;
+    const level = guessLevel(de);
+    if (buckets[level].length >= QUOTA[level]) continue;
+    buckets[level].push({ de: de.trim(), en: en.trim(), level });
+    if (full()) break;
   }
 
-  // balance: cap each level so no level dominates
-  const byLevel = {};
-  const balanced = [];
-  for (const s of out) {
-    byLevel[s.level] = (byLevel[s.level] ?? 0) + 1;
-    if (byLevel[s.level] <= 400) balanced.push(s);
-  }
+  const out = Object.values(buckets).flat()
+    .map((s, i) => ({ id: `tato-${i + 1}`, ...s }));
 
   await writeFile(
     new URL("../data/de/sentences-imported.json", import.meta.url),
-    JSON.stringify(balanced, null, 1),
+    JSON.stringify(out, null, 1),
     "utf8"
   );
-  console.log(`Wrote ${balanced.length} sentences:`,
-    Object.fromEntries(Object.entries(byLevel).map(([k, v]) => [k, Math.min(v, 400)])));
+  console.log(`Wrote ${out.length} sentences:`,
+    Object.fromEntries(Object.entries(buckets).map(([k, v]) => [k, v.length])));
   console.log("Done. Restart `npm run dev` — listening & speaking now draw from the full pool.");
 }
 
