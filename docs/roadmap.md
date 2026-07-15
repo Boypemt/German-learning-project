@@ -23,7 +23,10 @@
 
 ## Phase 3 — Better feedback
 
-- [ ] Writing correction via Claude API (bring-your-own-key field, so the app stays free)
+- [x] Learner profile + onboarding interview (`/start`), personalized daily plan on dashboard
+- [x] AI coach (`/coach`): coaching prompt from live progress data — free copy-paste or BYOK in-app
+- [ ] Writing correction via Claude API using the same BYOK key (button on Writing page)
+- [ ] AI-generated content packs per level up to C2 (Claude Code task: generate + review decks)
 - [ ] Pronunciation scoring with Whisper (WASM in-browser, or tiny API route)
 - [ ] Level self-assessment tests per CEFR level
 - [ ] C1 exam-format practice module (Goethe/telc/TestDaF reading & listening formats)

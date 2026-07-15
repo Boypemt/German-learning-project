@@ -1,6 +1,8 @@
-# Sprachheld — Personal German Learning Platform
+# Bei Opa — Learn German with heart 👴
 
 A free, self-hosted language learning platform. First target: **German A0 → C1** for working in Germany. Built to deploy on Vercel, designed so more languages can be added later.
+
+**The story:** you're learning German the old way — with Opa, a warm German grandfather. He greets you each day, praises you in German ("Sehr gut, mein Kind!"), and teaches you real German culture (Pfand, Feierabend, Kaffee und Kuchen…) alongside the language. Warm, paper-light design — easy on the eyes.
 
 ## Why this exists
 

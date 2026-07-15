@@ -1,12 +1,15 @@
 // Web Speech API wrappers (free, in-browser).
 // TTS works in all major browsers; SpeechRecognition needs Chrome/Edge.
 
-export function speak(text: string, lang = "de-DE", rate = 0.95): void {
+// Defaults tuned for "Opa": slightly slower and lower-pitched than the
+// stock browser voice, so it feels like a patient older speaker.
+export function speak(text: string, lang = "de-DE", rate = 0.92, pitch = 0.85): void {
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
   u.rate = rate;
+  u.pitch = pitch;
   const voice = window.speechSynthesis
     .getVoices()
     .find((v) => v.lang.startsWith(lang.slice(0, 2)));
@@ -43,10 +46,15 @@ export function getRecognition(lang = "de-DE"): SpeechRecognitionLike | null {
 }
 
 // Normalize for comparing what the user said/typed vs. the target.
+// Umlauts map to their digraphs so "schoen" counts as "schön" —
+// handy when typing on a keyboard without German characters.
 export function normalize(s: string): string {
   return s
     .toLowerCase()
     .replace(/ß/g, "ss")
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
     .replace(/[.,!?;:'"„“()\-]/g, "")
     .replace(/\s+/g, " ")
     .trim();

@@ -1,12 +1,29 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import sentencesData from "@/data/de/sentences-a1.json";
-import { speak, getRecognition, similarity, type SpeechRecognitionLike } from "@/lib/speech";
+import { speak, getRecognition, normalize, similarity } from "@/lib/speech";
 import { recordActivity } from "@/lib/storage";
+import { praise, encourage } from "@/components/Opa";
 
 interface Sentence { id: string; de: string; en: string; level: string; }
 const sentences = sentencesData as Sentence[];
+
+function WordMatch({ target, heard }: { target: string; heard: string }) {
+  const heardSet = new Set(normalize(heard).split(" "));
+  return (
+    <p style={{ fontSize: 19, lineHeight: 1.9, margin: "10px 0" }}>
+      {target.split(" ").map((w, i) => {
+        const hit = heardSet.has(normalize(w));
+        return (
+          <span key={i} className={"diff-word " + (hit ? "hit" : "miss")} title="🔊 anhören" onClick={() => speak(w)}>
+            {w}
+          </span>
+        );
+      })}
+    </p>
+  );
+}
 
 export default function SpeakingPage() {
   const order = useMemo(() => [...sentences], []);
@@ -14,7 +31,8 @@ export default function SpeakingPage() {
   const [listening, setListening] = useState(false);
   const [heard, setHeard] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const recRef = useRef<SpeechRecognitionLike | null>(null);
+  const [best, setBest] = useState(0); // best similarity this sentence
+  const [line, setLine] = useState<[string, string]>(["", ""]);
 
   const s = order[idx % order.length];
   const sim = heard !== null ? similarity(s.de, heard) : null;
@@ -24,16 +42,18 @@ export default function SpeakingPage() {
     setHeard(null);
     const rec = getRecognition("de-DE");
     if (!rec) {
-      setError("Speech recognition needs Chrome or Edge. You can still practice by shadowing: play, repeat aloud, compare by ear.");
+      setError("Speech recognition needs Chrome or Edge. Meanwhile: shadow it — play, repeat aloud, compare by ear.");
       return;
     }
-    recRef.current = rec;
     rec.onresult = (e) => {
-      const transcript = e.results[0][0].transcript;
-      setHeard(transcript);
-      if (similarity(s.de, transcript) >= 0.8) recordActivity();
+      const t = e.results[0][0].transcript;
+      setHeard(t);
+      const sc = similarity(s.de, t);
+      if (sc > best) setBest(sc);
+      setLine(sc >= 0.8 ? praise() : encourage());
+      if (sc >= 0.8) recordActivity("speaking");
     };
-    rec.onerror = (e) => setError(e.error === "not-allowed" ? "Microphone access denied." : `Recognition error: ${e.error}`);
+    rec.onerror = (e) => setError(e.error === "not-allowed" ? "Microphone access denied — allow it in the address bar." : `Recognition error: ${e.error}`);
     rec.onend = () => setListening(false);
     setListening(true);
     rec.start();
@@ -43,46 +63,55 @@ export default function SpeakingPage() {
     setIdx((i) => i + 1);
     setHeard(null);
     setError(null);
+    setBest(0);
   }
 
   return (
     <>
-      <h1>Speaking — shadow &amp; compare</h1>
+      <h1>Speaking</h1>
+      <div className="progressbar"><div style={{ width: `${((idx % order.length) / order.length) * 100}%` }} /></div>
       <p className="muted small">
-        1. Listen. 2. Repeat aloud imitating rhythm and melody (shadowing). 3. Record — the app checks if a native-trained recognizer understood you.
+        Listen → repeat aloud (copy the rhythm) → record. A recognizer trained on native speech checks if it understood you.
       </p>
 
-      <div className="card" style={{ textAlign: "center" }}>
-        <div className="word" style={{ fontSize: 24 }}>{s.de}</div>
-        <p className="muted small">{s.en}</p>
+      <div className="card center">
+        <span className="badge">{s.level}</span>
+        <div className="word say" style={{ fontSize: 26, margin: "10px 0 2px" }} title="🔊 anhören" onClick={() => speak(s.de)}>{s.de}</div>
+        <p className="muted small" style={{ marginTop: 0 }}>{s.en}</p>
         <div className="row">
-          <button onClick={() => speak(s.de, "de-DE", 0.95)}>🔊 Listen</button>
+          <button className="blue" onClick={() => speak(s.de, "de-DE", 0.95)}>🔊 Listen</button>
           <button onClick={() => speak(s.de, "de-DE", 0.65)}>🐢 Slow</button>
-          <button className="primary" onClick={record} disabled={listening}>
-            {listening ? "🎙️ Listening…" : "🎙️ Record me"}
+        </div>
+        <div className="row">
+          <button className={"bad big" + (listening ? " pulse" : "")} onClick={record} disabled={listening} style={{ maxWidth: 320 }}>
+            {listening ? "🎙️ Listening… speak now" : "🎙️ Record me"}
           </button>
-          <button className="ghost" onClick={next}>Next →</button>
         </div>
 
         {heard !== null && sim !== null && (
           <div>
-            <p className={sim >= 0.8 ? "correct" : "wrong"}>
-              {sim >= 0.999 ? "Perfect — understood every word! ✓" : sim >= 0.8 ? "Good — nearly all words recognized" : "Recognizer struggled — try slower, exaggerate the sounds"}
-            </p>
+            <div className={"feedback-banner " + (sim >= 0.8 ? "ok" : "no")}>
+              👴 „{line[0]}“ {sim >= 0.999 ? "— every word understood! 🌟" : sim >= 0.8 ? "— polish the red words." : "— slow down, exaggerate the sounds, try again."}
+            </div>
+            <WordMatch target={s.de} heard={heard} />
             <p className="muted small">Recognized: „{heard}“</p>
           </div>
         )}
         {error && <p className="wrong small">{error}</p>}
+
+        <div className="row">
+          <button className="ghost" onClick={next}>Next sentence →</button>
+        </div>
       </div>
 
       <div className="card">
-        <h2 style={{ marginTop: 0 }}>Daily pronunciation focus</h2>
-        <p className="small muted">
-          Drill these until automatic: <strong>ü</strong> (say &quot;ee&quot; with rounded lips: über, müde) ·{" "}
-          <strong>ö</strong> (say &quot;ay&quot; with rounded lips: schön, hören) ·{" "}
-          <strong>ch</strong> soft after e/i (ich, nicht) vs. hard after a/o/u (Buch, acht) ·{" "}
-          <strong>final devoicing</strong> (Tag→&quot;Tak&quot;, Hund→&quot;Hunt&quot;) ·{" "}
-          <strong>z</strong> = &quot;ts&quot; (Zeit, Zug).
+        <h2 style={{ marginTop: 0 }}>🎯 Sounds that mark you as fluent</h2>
+        <p className="small muted" style={{ marginBottom: 0 }}>
+          <strong>ü</strong> — say &quot;ee&quot;, round your lips (über, müde) · {" "}
+          <strong>ö</strong> — say &quot;ay&quot;, round your lips (schön) · {" "}
+          <strong>ch</strong> — soft after e/i (ich), hard after a/o/u (Buch) · {" "}
+          <strong>endings devoice</strong> — Tag→&quot;Tak&quot;, Hund→&quot;Hunt&quot; · {" "}
+          <strong>z</strong> = &quot;ts&quot; (Zeit).
         </p>
       </div>
     </>
