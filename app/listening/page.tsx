@@ -7,6 +7,7 @@ import Umlauts from "@/components/Umlauts";
 import { speak, normalize, similarity } from "@/lib/speech";
 import { recordActivity } from "@/lib/storage";
 import { praise, encourage } from "@/components/Opa";
+import NextStepBanner from "@/components/NextStepBanner";
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -69,6 +70,7 @@ export default function ListeningPage() {
   return (
     <>
       <h1>Listening</h1>
+      <NextStepBanner skill="listening" />
       <div className="progressbar"><div style={{ width: `${((idx % order.length) / order.length) * 100}%` }} /></div>
       <p className="muted small">
         Sentence {(idx % order.length) + 1}/{order.length} · <span className="badge">{s.level}</span>

@@ -8,6 +8,7 @@ import { sortByLevel } from "@/lib/content";
 import { loadProfile } from "@/lib/profile";
 import { praise, encourage } from "@/components/Opa";
 import Say from "@/components/Say";
+import NextStepBanner from "@/components/NextStepBanner";
 
 interface Exercise { q: string; a: string; hint: string; }
 interface Topic { id: string; level: string; title: string; explanation: string; exercises: Exercise[]; }
@@ -91,6 +92,7 @@ export default function GrammarPage() {
   return (
     <>
       <h1>Grammar</h1>
+      <NextStepBanner skill="grammar" />
       <div className="progressbar gold"><div style={{ width: `${(totalDone / totalEx) * 100}%` }} /></div>
       <p className="muted small">{totalDone}/{totalEx} exercises mastered · one topic per day is plenty</p>
 

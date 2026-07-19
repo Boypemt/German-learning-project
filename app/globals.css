@@ -348,6 +348,15 @@ kbd {
 .plan-step .p-check { font-size: 18px; flex-shrink: 0; }
 .plan-step .p-body { flex: 1; min-width: 0; }
 
+/* plan step banner inside exercise pages */
+.stepbar {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  background: var(--card); border: 2px solid var(--border); border-radius: 14px;
+  padding: 10px 14px; margin: 10px 0;
+  animation: rise 0.3s ease both;
+}
+.stepbar.done { border-color: rgba(88, 167, 0, 0.5); background: #f2f8e8; justify-content: space-between; }
+
 /* umlaut keys */
 .umlaut-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0 2px; }
 .umlaut {

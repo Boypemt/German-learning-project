@@ -6,6 +6,7 @@ import { loadProfile } from "@/lib/profile";
 import { speak, getRecognition, normalize, similarity } from "@/lib/speech";
 import { recordActivity } from "@/lib/storage";
 import { praise, encourage } from "@/components/Opa";
+import NextStepBanner from "@/components/NextStepBanner";
 
 function WordMatch({ target, heard }: { target: string; heard: string }) {
   const heardSet = new Set(normalize(heard).split(" "));
@@ -74,6 +75,7 @@ export default function SpeakingPage() {
   return (
     <>
       <h1>Speaking</h1>
+      <NextStepBanner skill="speaking" />
       <div className="progressbar"><div style={{ width: `${((idx % order.length) / order.length) * 100}%` }} /></div>
       <p className="muted small">
         Listen → repeat aloud (copy the rhythm) → record. A recognizer trained on native speech checks if it understood you.

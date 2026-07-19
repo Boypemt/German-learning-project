@@ -1,5 +1,8 @@
 "use client";
 
+// Minimal nav — the daily plan feeds you from page to page,
+// so only the "meta" destinations live up here.
+
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
@@ -7,11 +10,6 @@ import { Opa } from "./Opa";
 import { getBalance } from "@/lib/garden";
 
 const items = [
-  { href: "/vocab", icon: "🃏", label: "Vocab" },
-  { href: "/grammar", icon: "🧩", label: "Grammar" },
-  { href: "/listening", icon: "🎧", label: "Listening" },
-  { href: "/speaking", icon: "🎙️", label: "Speaking" },
-  { href: "/writing", icon: "✍️", label: "Writing" },
   { href: "/garten", icon: "🌻", label: "Garten" },
   { href: "/coach", icon: "🧭", label: "Coach" },
 ];
@@ -33,6 +31,9 @@ export default function Nav() {
         <Link href="/" className={"brand" + (path === "/" ? " active" : "")}>
           <Opa size={30} /> Bei Opa
         </Link>
+        {path !== "/" && (
+          <Link href="/" className="">🏠 <span className="label">Heute</span></Link>
+        )}
         {items.map((it) => (
           <Link key={it.href} href={it.href} className={path === it.href ? "active" : ""}>
             {it.icon} <span className="label">{it.label}</span>

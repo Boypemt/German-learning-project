@@ -21,6 +21,7 @@ export interface VocabItem {
   en: string;
   example?: string;
   exampleEn?: string;
+  emoji?: string; // picture hint for concrete words (mostly A1/A2)
   level: string; // CEFR
 }
 

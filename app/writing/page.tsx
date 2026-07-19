@@ -6,6 +6,7 @@ import { load, save, recordActivity } from "@/lib/storage";
 import { OpaSays } from "@/components/Opa";
 import Say from "@/components/Say";
 import Umlauts from "@/components/Umlauts";
+import NextStepBanner from "@/components/NextStepBanner";
 
 interface Prompt { id: string; level: string; prompt: string; promptEn: string; }
 const prompts = promptsData as Prompt[];
@@ -54,6 +55,7 @@ export default function WritingPage() {
   return (
     <>
       <h1>Writing</h1>
+      <NextStepBanner skill="writing" />
       <OpaSays
         de="Schreib mir ein paar Zeilen — Fehler sind erlaubt, Schweigen nicht!"
         en="Write me a few lines — mistakes are allowed, silence isn't!"

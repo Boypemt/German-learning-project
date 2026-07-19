@@ -9,6 +9,7 @@ import { speak } from "@/lib/speech";
 import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
 import { Opa, praise } from "@/components/Opa";
+import NextStepBanner from "@/components/NextStepBanner";
 import type { Grade } from "ts-fsrs";
 
 const CONFETTI = ["🎉", "⭐", "✨", "🎊", "💛"];
@@ -92,6 +93,7 @@ export default function VocabPage() {
     return (
       <>
         <h1>Vocab</h1>
+        <NextStepBanner skill="vocab" />
         <div className="card center confetti-box">
           {done > 0 && confetti.map((c, i) => (
             <span key={i} className="confetti" style={{ left: c.left, animationDelay: c.delay }}>{c.char}</span>
@@ -126,6 +128,7 @@ export default function VocabPage() {
   return (
     <>
       <h1>Vocab</h1>
+      <NextStepBanner skill="vocab" />
       <div className="progressbar"><div style={{ width: `${pct}%` }} /></div>
       <p className="muted small">{queue.length} left · {done} done · say it out loud before flipping</p>
 
@@ -133,6 +136,7 @@ export default function VocabPage() {
         <div className={"flip-inner" + (revealed ? " flipped" : "")}>
           <div className="flip-face">
             <span className="badge">{item.level}</span>
+            {item.emoji && <div style={{ fontSize: 54, lineHeight: 1 }}>{item.emoji}</div>}
             <div className="word say" title="🔊 anhören" onClick={() => speak(item.de)}>{item.de}</div>
             <button className="ghost" onClick={() => speak(item.de)}>🔊 Hear it again</button>
           </div>
