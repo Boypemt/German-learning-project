@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "import:tatoeba": "node scripts/import-tatoeba.mjs"
+    "import:tatoeba": "node scripts/import-tatoeba.mjs",
+    "import:images": "node scripts/import-images.mjs"
   },
   "dependencies": {
     "next": "^16.2.10",

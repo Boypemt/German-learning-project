@@ -16,6 +16,7 @@ import sentB2 from "@/data/de/sentences-b2.json";
 import sentC1 from "@/data/de/sentences-c1.json";
 import sentC2 from "@/data/de/sentences-c2.json";
 import sentImported from "@/data/de/sentences-imported.json";
+import imagesManifest from "@/data/de/images.json";
 
 export interface Sentence {
   id: string;
@@ -32,6 +33,9 @@ export function levelIndex(level: Level | string): number {
   return i === -1 ? 0 : i;
 }
 
+// photo manifest written by scripts/import-images.mjs
+const IMAGES = imagesManifest as Record<string, { src: string; source?: string; license?: string }>;
+
 const ALL_VOCAB: VocabItem[] = [
   ...(vocabA1 as VocabItem[]),
   ...(vocabA2 as VocabItem[]),
@@ -39,7 +43,7 @@ const ALL_VOCAB: VocabItem[] = [
   ...(vocabB2 as VocabItem[]),
   ...(vocabC1 as VocabItem[]),
   ...(vocabC2 as VocabItem[]),
-];
+].map((v) => (IMAGES[v.id] ? { ...v, img: IMAGES[v.id].src } : v));
 
 const ALL_SENTENCES: Sentence[] = [
   ...(sentA1 as Sentence[]),

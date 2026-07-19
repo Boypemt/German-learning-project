@@ -22,6 +22,12 @@ Everything here is free, and licenses are noted so the project stays legal if it
 | Goethe-Institut A1/A2/B1 Wortlisten | Official CEFR vocab lists (PDFs, free to download for personal study; check terms before redistributing) | Free for personal use |
 | [FreeDict deu-eng](https://freedict.org/) | German–English dictionary files | GPL/free |
 
+## Images
+
+| Resource | What | License |
+|---|---|---|
+| [Openverse](https://openverse.org/) | Photo search across CC-licensed collections; our importer (`npm run import:images`) fetches **CC0/public-domain only** for vocab flashcards | CC0 / PDM (no attribution required; source recorded in `data/de/images.json`) |
+
 ## Sentences & audio
 
 | Resource | What | License |

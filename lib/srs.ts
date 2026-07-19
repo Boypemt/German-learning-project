@@ -22,6 +22,7 @@ export interface VocabItem {
   example?: string;
   exampleEn?: string;
   emoji?: string; // picture hint for concrete words (mostly A1/A2)
+  img?: string; // photo path (merged from data/de/images.json manifest)
   level: string; // CEFR
 }
 

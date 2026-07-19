@@ -136,7 +136,12 @@ export default function VocabPage() {
         <div className={"flip-inner" + (revealed ? " flipped" : "")}>
           <div className="flip-face">
             <span className="badge">{item.level}</span>
-            {item.emoji && <div style={{ fontSize: 54, lineHeight: 1 }}>{item.emoji}</div>}
+            {item.img ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={item.img} alt="" style={{ width: 150, height: 110, objectFit: "cover", borderRadius: 14, border: "2px solid var(--border)" }} />
+            ) : (
+              item.emoji && <div style={{ fontSize: 54, lineHeight: 1 }}>{item.emoji}</div>
+            )}
             <div className="word say" title="🔊 anhören" onClick={() => speak(item.de)}>{item.de}</div>
             <button className="ghost" onClick={() => speak(item.de)}>🔊 Hear it again</button>
           </div>
