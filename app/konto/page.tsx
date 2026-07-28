@@ -12,6 +12,8 @@ export default function KontoPage() {
   const [userEmail, setUserEmail] = useState<string | null>(null);
   const [msg, setMsg] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
 
   useEffect(() => {
     const sb = getSupabase();
@@ -53,7 +55,21 @@ export default function KontoPage() {
       options: { emailRedirectTo: window.location.origin },
     });
     setBusy(false);
-    setMsg(error ? `Error: ${error.message}` : "✉️ Check your inbox — the sign-in link is on its way!");
+    if (error) {
+      setMsg(`Error: ${error.message}`);
+    } else {
+      setSent(true);
+      setMsg("✉️ Email sent! Open it on THIS device and click the link. (Tip: on a computer, open Gmail in the browser here.)");
+    }
+  }
+
+  async function verifyCode() {
+    const sb = getSupabase()!;
+    setBusy(true);
+    setMsg("");
+    const { error } = await sb.auth.verifyOtp({ email, token: code.trim(), type: "email" });
+    setBusy(false);
+    setMsg(error ? `Error: ${error.message}` : "✅ Signed in! Syncing your progress…");
   }
 
   async function doPush() {
@@ -102,8 +118,27 @@ export default function KontoPage() {
               </button>
             </div>
             <p className="muted small" style={{ marginBottom: 0 }}>
-              No password — you get an email with a sign-in link. First sign-in creates your account.
+              No password — you get an email with a code and a link. First sign-in creates your account.
             </p>
+            {sent && (
+              <>
+                <hr className="divider" />
+                <div className="row left">
+                  <input
+                    type="text"
+                    placeholder="6-digit code"
+                    value={code}
+                    inputMode="numeric"
+                    onChange={(e) => setCode(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && verifyCode()}
+                    style={{ maxWidth: 160, letterSpacing: 3, fontWeight: 700 }}
+                  />
+                  <button className="good" onClick={verifyCode} disabled={busy || code.trim().length < 6}>
+                    Sign in with code
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </>
       ) : (
