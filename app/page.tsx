@@ -26,7 +26,9 @@ const GREETINGS: [string, string][] = [
 ];
 
 function dayIndex(): number {
-  return Math.floor(Date.now() / 86400000);
+  // local-timezone day counter, so the greeting & culture note flip at YOUR midnight
+  const d = new Date();
+  return Math.floor((d.getTime() - d.getTimezoneOffset() * 60000) / 86400000);
 }
 
 export default function Dashboard() {

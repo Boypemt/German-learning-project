@@ -8,7 +8,18 @@
 
 import { getSupabase } from "./supabase";
 
-const EXCLUDE = new Set(["sl:coach:key"]);
+const EXCLUDE = new Set(["sl:coach:key", "sl:sync:user"]);
+
+/** Wipe learner progress on this device (keeps device-only secrets). */
+export function clearProgress(): void {
+  if (typeof window === "undefined") return;
+  const doomed: string[] = [];
+  for (let i = 0; i < window.localStorage.length; i++) {
+    const key = window.localStorage.key(i);
+    if (key && key.startsWith("sl:") && !EXCLUDE.has(key)) doomed.push(key);
+  }
+  doomed.forEach((k) => window.localStorage.removeItem(k));
+}
 
 export function collectState(): Record<string, unknown> {
   const out: Record<string, unknown> = {};
@@ -63,6 +74,18 @@ export async function smartSync(): Promise<void> {
   if (!sb || typeof window === "undefined") return;
   const { data: { user } } = await sb.auth.getUser();
   if (!user) return;
+
+  // Different account than last time on this device? Never mix progress:
+  // wipe local, load THIS account's cloud copy (or start fresh).
+  const lastUser = window.localStorage.getItem("sl:sync:user");
+  window.localStorage.setItem("sl:sync:user", user.id);
+  if (lastUser && lastUser !== user.id) {
+    clearProgress();
+    await pullState();
+    window.dispatchEvent(new CustomEvent("sl:coins"));
+    return;
+  }
+
   const hasLocalProfile = !!window.localStorage.getItem("sl:profile");
   if (!hasLocalProfile) {
     const pulled = await pullState();
