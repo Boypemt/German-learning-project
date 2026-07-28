@@ -7,7 +7,7 @@
 import { useEffect, useState } from "react";
 import alphabetData from "@/data/de/alphabet.json";
 import quizData from "@/data/de/abc-quiz.json";
-import { speak } from "@/lib/speech";
+import { speak, speakSeq } from "@/lib/speech";
 import { load, save, recordActivity } from "@/lib/storage";
 import { OpaSays, praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
@@ -48,10 +48,7 @@ function buildQuestions(): QuizQuestion[] {
 
 function AbcCard({ entry }: { entry: AlphabetEntry }) {
   function tap() {
-    speak(entry.symbol.length <= 2 ? entry.symbol : entry.name);
-    entry.examples.forEach((ex, i) => {
-      setTimeout(() => speak(ex.de), 900 * (i + 1));
-    });
+    speakSeq([entry.symbol.length <= 2 ? entry.symbol : entry.name, ...entry.examples.map((ex) => ex.de)]);
   }
 
   return (
@@ -83,7 +80,7 @@ export default function AbcPage() {
     setScore(0);
     setSelected(null);
     setStarted(true);
-    setTimeout(() => speak(qs[0].correct), 300);
+    speak(qs[0].correct);
   }
 
   function selectOption(opt: string) {
@@ -109,7 +106,7 @@ export default function AbcPage() {
     const next = qIdx + 1;
     setQIdx(next);
     setSelected(null);
-    setTimeout(() => speak(questions[next].correct), 300);
+    speak(questions[next].correct);
   }
 
   return (

@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { ITEMS, getOwned, getBalance, buy, COINS_PER_REVIEW, type GardenItem } from "@/lib/garden";
 import { OpaSays } from "@/components/Opa";
 import Say from "@/components/Say";
-import { speak } from "@/lib/speech";
+import { speak, speakSeq } from "@/lib/speech";
 
 export default function GardenPage() {
   const [owned, setOwned] = useState<string[]>([]);
@@ -23,13 +23,13 @@ export default function GardenPage() {
     setOwned(getOwned());
     setBalance(getBalance());
     setLastQuip(item.quip);
-    if (item.sound) setTimeout(() => speak(item.sound!), 300);
+    if (item.sound) speak(item.sound);
   }
 
   // Tap any item: Opa says its German name; animals answer afterwards.
   function poke(item: GardenItem) {
-    speak(item.de);
-    if (item.sound) setTimeout(() => speak(item.sound!), 1100);
+    if (item.sound) speakSeq([item.de, item.sound]);
+    else speak(item.de);
   }
 
   if (!ready) return <p className="muted">Loading…</p>;

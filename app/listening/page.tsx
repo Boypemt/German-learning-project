@@ -64,7 +64,7 @@ export default function ListeningPage() {
     setIdx((i) => i + 1);
     setVal("");
     setChecked(false);
-    setTimeout(() => speak(order[(idx + 1) % order.length].de), 250);
+    speak(order[(idx + 1) % order.length].de);
   }
 
   return (

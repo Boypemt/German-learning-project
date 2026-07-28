@@ -3,18 +3,52 @@
 
 // Defaults tuned for "Opa": slightly slower and lower-pitched than the
 // stock browser voice, so it feels like a patient older speaker.
+
+// Bumped by every speak()/speakSeq() call. A speakSeq() chain checks this
+// before queuing its next utterance, so a later tap (which bumps it again)
+// silently kills any still-running chain instead of overlapping it.
+let seqToken = 0;
+
+function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
+  return window.speechSynthesis.getVoices().find((v) => v.lang.startsWith(lang.slice(0, 2)));
+}
+
 export function speak(text: string, lang = "de-DE", rate = 0.92, pitch = 0.85): void {
+  seqToken++;
   if (typeof window === "undefined" || !window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
   u.rate = rate;
   u.pitch = pitch;
-  const voice = window.speechSynthesis
-    .getVoices()
-    .find((v) => v.lang.startsWith(lang.slice(0, 2)));
+  const voice = pickVoice(lang);
   if (voice) u.voice = voice;
   window.speechSynthesis.speak(u);
+}
+
+// Speaks a list of texts back-to-back, each one starting only once the
+// previous utterance actually ends — not after a guessed setTimeout delay.
+// A new speak()/speakSeq() call always wins over one already in progress.
+export function speakSeq(texts: string[], lang = "de-DE", rate = 0.92, pitch = 0.85): void {
+  seqToken++;
+  const token = seqToken;
+  if (typeof window === "undefined" || !window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const voice = pickVoice(lang);
+
+  function speakAt(i: number) {
+    if (token !== seqToken || i >= texts.length) return;
+    const u = new SpeechSynthesisUtterance(texts[i]);
+    u.lang = lang;
+    u.rate = rate;
+    u.pitch = pitch;
+    if (voice) u.voice = voice;
+    u.onend = () => speakAt(i + 1);
+    u.onerror = () => speakAt(i + 1);
+    window.speechSynthesis.speak(u);
+  }
+
+  speakAt(0);
 }
 
 type RecognitionCtor = new () => SpeechRecognitionLike;
