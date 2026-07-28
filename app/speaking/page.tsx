@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { getSentences, type Sentence } from "@/lib/content";
 import { loadProfile } from "@/lib/profile";
 import { speak, getRecognition, normalize, similarity } from "@/lib/speech";
@@ -119,6 +120,9 @@ export default function SpeakingPage() {
           <strong>ch</strong> — soft after e/i (ich), hard after a/o/u (Buch) · {" "}
           <strong>endings devoice</strong> — Tag→&quot;Tak&quot;, Hund→&quot;Hunt&quot; · {" "}
           <strong>z</strong> = &quot;ts&quot; (Zeit).
+        </p>
+        <p className="muted small" style={{ marginBottom: 0 }}>
+          New to German sounds? <Link href="/abc" style={{ textDecoration: "underline" }}>Full guide → /abc</Link>
         </p>
       </div>
     </>

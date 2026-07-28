@@ -6,7 +6,10 @@ import { load, save } from "./storage";
 
 export type Level = "A0" | "A1" | "A2" | "B1" | "B2" | "C1";
 export type Goal = "B1" | "B2" | "C1" | "C2";
-export type SkillId = "vocab" | "grammar" | "listening" | "speaking" | "writing";
+export type SkillId = "abc" | "vocab" | "grammar" | "listening" | "speaking" | "writing";
+// abc is a one-off lesson-zero step, prepended by generatePlan — it isn't
+// part of the scaling target system below, so it's excluded from that map.
+type CoreSkillId = Exclude<SkillId, "abc">;
 
 export interface Profile {
   level: Level;
@@ -34,7 +37,7 @@ export interface PlanStep {
   target: number;
 }
 
-const META: Record<SkillId, { href: string; icon: string; label: string }> = {
+const META: Record<CoreSkillId, { href: string; icon: string; label: string }> = {
   vocab: { href: "/vocab", icon: "🃏", label: "Vocab" },
   grammar: { href: "/grammar", icon: "🧩", label: "Grammar" },
   listening: { href: "/listening", icon: "🎧", label: "Listening" },
@@ -42,7 +45,7 @@ const META: Record<SkillId, { href: string; icon: string; label: string }> = {
   writing: { href: "/writing", icon: "✍️", label: "Writing" },
 };
 
-const TARGETS: Record<SkillId, Record<15 | 30 | 60, number>> = {
+const TARGETS: Record<CoreSkillId, Record<15 | 30 | 60, number>> = {
   vocab: { 15: 10, 30: 15, 60: 25 },
   grammar: { 15: 0, 30: 3, 60: 5 },
   listening: { 15: 3, 30: 5, 60: 8 },
@@ -50,7 +53,7 @@ const TARGETS: Record<SkillId, Record<15 | 30 | 60, number>> = {
   writing: { 15: 0, 30: 1, 60: 1 },
 };
 
-const SUBS: Record<SkillId, (n: number) => string> = {
+const SUBS: Record<CoreSkillId, (n: number) => string> = {
   vocab: (n) => `${n} flashcard reviews — clear due cards first`,
   grammar: (n) => `${n} exercises in one topic`,
   listening: (n) => `${n} dictation sentences correct`,
@@ -61,14 +64,14 @@ const SUBS: Record<SkillId, (n: number) => string> = {
 export function generatePlan(p: Profile): PlanStep[] {
   // Vocab always first (spaced repetition waits for no one),
   // then the learner's focus skills, then the rest.
-  const order: SkillId[] = ["vocab", "speaking", "listening", "grammar", "writing"];
-  const sorted = [
-    "vocab" as SkillId,
+  const order: CoreSkillId[] = ["vocab", "speaking", "listening", "grammar", "writing"];
+  const sorted: CoreSkillId[] = [
+    "vocab" as CoreSkillId,
     ...order.filter((s) => s !== "vocab" && p.focus.includes(s)),
     ...order.filter((s) => s !== "vocab" && !p.focus.includes(s)),
   ];
 
-  return sorted
+  const steps: PlanStep[] = sorted
     .map((skill) => {
       let target = TARGETS[skill][p.minutes];
       // absolute beginners: pronunciation before writing
@@ -80,6 +83,20 @@ export function generatePlan(p: Profile): PlanStep[] {
       return { skill, target, ...META[skill], sub: SUBS[skill](target) };
     })
     .filter((s) => s.target > 0);
+
+  // Lesson zero: absolute beginners learn the letter sounds before anything else.
+  if ((p.level === "A0" || p.level === "A1") && !load("abc:done", false)) {
+    steps.unshift({
+      skill: "abc",
+      href: "/abc",
+      icon: "🔤",
+      label: "Das ABC",
+      sub: "learn the letter sounds first",
+      target: 10,
+    });
+  }
+
+  return steps;
 }
 
 export const LEVEL_LABELS: Record<Level, string> = {

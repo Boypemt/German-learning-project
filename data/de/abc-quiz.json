@@ -1,0 +1,12 @@
+[
+  { "id": "q-ei", "correct": "mein", "correctEn": "my", "decoys": ["mien", "mayn"] },
+  { "id": "q-ie", "correct": "Bier", "correctEn": "beer", "decoys": ["Beir", "Bir"] },
+  { "id": "q-ch", "correct": "ich", "correctEn": "I", "decoys": ["isch", "icch"] },
+  { "id": "q-sch", "correct": "Schule", "correctEn": "school", "decoys": ["Chule", "Sule"] },
+  { "id": "q-z", "correct": "Zeit", "correctEn": "time", "decoys": ["Tseit", "Seit"] },
+  { "id": "q-st", "correct": "Straße", "correctEn": "street", "decoys": ["Sstraße", "Schtraße"] },
+  { "id": "q-au", "correct": "Haus", "correctEn": "house", "decoys": ["Hous", "Hais"] },
+  { "id": "q-eu", "correct": "neu", "correctEn": "new", "decoys": ["nau", "noi"] },
+  { "id": "q-h", "correct": "gehen", "correctEn": "to go", "decoys": ["gehhen", "geen"] },
+  { "id": "q-devoice", "correct": "Tag", "correctEn": "day", "decoys": ["Tak", "Tach"] }
+]

@@ -338,6 +338,8 @@ kbd {
   animation: rise 0.35s ease both;
 }
 .shop-item.owned { background: #f2f7e8; border-color: #cfe0ae; }
+.shop-item.tap { cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+.shop-item.tap:hover { transform: translateY(-2px); border-color: var(--border-light); }
 .shop-item .s-emoji { font-size: 30px; margin-bottom: 4px; }
 .shop-item .s-name { font-weight: 700; font-size: 13.5px; }
 .shop-item .s-en { margin-bottom: 8px; }
