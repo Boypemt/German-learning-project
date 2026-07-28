@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import culture from "@/data/de/culture.json";
+import { isCloudConfigured } from "@/lib/supabase";
 import { getVocabDeck } from "@/lib/content";
 import { stats } from "@/lib/srs";
 import { getStreak, getTodayCount, getTodaySkillCounts } from "@/lib/storage";
@@ -30,7 +30,6 @@ function dayIndex(): number {
 }
 
 export default function Dashboard() {
-  const router = useRouter();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [plan, setPlan] = useState<PlanStep[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -44,25 +43,57 @@ export default function Dashboard() {
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    const p = loadProfile();
-    if (!p) {
-      router.replace("/start");
-      return;
+    // re-runs on every activity AND when cloud sync applies pulled state,
+    // so a fresh device shows the dashboard the moment progress arrives
+    function init() {
+      const p = loadProfile();
+      setProfile(p);
+      if (p) {
+        setPlan(generatePlan(p));
+        setCounts(getTodaySkillCounts());
+        setS(stats("de", getVocabDeck(p.level)));
+        setStreak(getStreak());
+        setToday(getTodayCount());
+        setXp(getXp());
+        setLvl(getLevel());
+        setCoins(getBalance());
+        setGardenCount(getOwned().length);
+      }
+      setReady(true);
     }
-    setProfile(p);
-    setPlan(generatePlan(p));
-    setCounts(getTodaySkillCounts());
-    setS(stats("de", getVocabDeck(p.level)));
-    setStreak(getStreak());
-    setToday(getTodayCount());
-    setXp(getXp());
-    setLvl(getLevel());
-    setCoins(getBalance());
-    setGardenCount(getOwned().length);
-    setReady(true);
-  }, [router]);
+    init();
+    window.addEventListener("sl:coins", init);
+    return () => window.removeEventListener("sl:coins", init);
+  }, []);
 
-  if (!ready || !profile) return <p className="muted">Loading…</p>;
+  if (!ready) return <p className="muted">Loading…</p>;
+
+  if (!profile) {
+    return (
+      <>
+        <OpaSays
+          de="Willkommen bei Opa! Bist du zum ersten Mal hier?"
+          en="Welcome! Is this your first time here?"
+          size={92}
+        />
+        <div className="card center">
+          <Link href="/start">
+            <button className="good big" style={{ maxWidth: 380 }}>🌱 I&apos;m new — start the interview</button>
+          </Link>
+          {isCloudConfigured() && (
+            <>
+              <p className="muted small" style={{ margin: "14px 0 8px" }}>
+                Already learning with Opa on another device?
+              </p>
+              <Link href="/konto">
+                <button className="ghost">👤 Sign in — load my progress</button>
+              </Link>
+            </>
+          )}
+        </div>
+      </>
+    );
+  }
 
   const stepDone = (st: PlanStep) => (counts[st.skill] ?? 0) >= st.target;
   const nextStep = plan.find((st) => !stepDone(st));
