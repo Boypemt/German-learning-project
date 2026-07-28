@@ -54,7 +54,6 @@ Free-tier email limits: Supabase's built-in mailer allows only a few auth emails
 ## Checklist before going live
 
 - [ ] `npm run build` green locally
-- [ ] Photos reviewed (`public/img/vocab/`)
 - [ ] `supabase/schema.sql` executed
 - [ ] Env vars set on Vercel
 - [ ] Site URL + redirect URLs configured in Supabase

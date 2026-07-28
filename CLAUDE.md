@@ -21,7 +21,7 @@ App is called **"Bei Opa"** — mascot is Opa, a warm German grandfather (SVG in
 - Next.js 14 App Router, TypeScript, plain CSS in `app/globals.css` (no Tailwind).
 - All pages are client components (`"use client"`) — progress lives in localStorage, no server state.
 - SRS: `ts-fsrs` package, wrapped in `lib/srs.ts`. Never implement scheduling by hand.
-- Speech: `lib/speech.ts` wraps Web Speech API. Recognition requires Chrome/Edge; always feature-detect.
+- Speech: `lib/speech.ts` wraps Web Speech API. Recognition requires Chrome/Edge; always feature-detect. Never chain speech with `setTimeout` — use `speak()`/`speakSeq()` from `lib/speech.ts` (`speakSeq` for multi-part audio); both cancel/token-guard properly so a new tap can't overlap a pending one.
 - Content: static JSON under `data/de/`. Progress: localStorage first (keys prefixed `sl:`, see `lib/storage.ts`).
 - Cloud (optional): Supabase auth (magic link) + whole-state jsonb sync in `lib/sync.ts`/`lib/supabase.ts`; table `user_state` with RLS (`supabase/schema.sql`); account UI at `/konto`. App must always keep working without env vars (local-only mode). Never sync `sl:coach:key`.
 - Keep German content out of logic — everything language-specific belongs in `data/<lang>/`.

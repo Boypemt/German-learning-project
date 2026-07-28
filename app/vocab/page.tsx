@@ -5,14 +5,20 @@ import { getVocabDeck } from "@/lib/content";
 import { loadProfile } from "@/lib/profile";
 import { buildQueue, review, Rating, type VocabItem } from "@/lib/srs";
 import { recordActivity } from "@/lib/storage";
-import { speak } from "@/lib/speech";
+import { speak, getRecognition, normalize } from "@/lib/speech";
 import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
-import { Opa, praise } from "@/components/Opa";
+import { Opa, praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
 import type { Grade } from "ts-fsrs";
 
 const CONFETTI = ["🎉", "⭐", "✨", "🎊", "💛"];
+
+// German nouns are stored with their article ("die Zeit") — strip it before
+// checking what the learner said, since saying the bare word is fine too.
+function stripArticle(de: string): string {
+  return de.replace(/^(der|die|das)\s+/i, "");
+}
 
 export default function VocabPage() {
   const [queue, setQueue] = useState<VocabItem[]>([]);
@@ -21,6 +27,9 @@ export default function VocabPage() {
   const [done, setDone] = useState(0);
   const [again, setAgain] = useState(0);
   const [ready, setReady] = useState(false);
+  const [hasRecognition, setHasRecognition] = useState(false);
+  const [sayResult, setSayResult] = useState<"idle" | "listening" | "hit" | "miss">("idle");
+  const [sayLine, setSayLine] = useState<[string, string]>(["", ""]);
 
   const loadSession = useCallback(() => {
     const deck = getVocabDeck(loadProfile()?.level ?? "A0");
@@ -35,6 +44,7 @@ export default function VocabPage() {
   }, []);
 
   useEffect(() => { loadSession(); }, [loadSession]);
+  useEffect(() => setHasRecognition(!!getRecognition()), []);
 
   const item = queue[0];
 
@@ -75,7 +85,25 @@ export default function VocabPage() {
   // auto-pronounce each new word
   useEffect(() => {
     if (item) speak(item.de);
+    setSayResult("idle");
   }, [item]);
+
+  // Optional practice: doesn't affect grading or activity counts.
+  function sayIt() {
+    if (!item) return;
+    const rec = getRecognition("de-DE");
+    if (!rec) return;
+    setSayResult("listening");
+    rec.onresult = (e) => {
+      const heard = e.results[0][0].transcript;
+      const hit = normalize(heard).includes(normalize(stripArticle(item.de)));
+      setSayLine(hit ? praise() : encourage());
+      setSayResult(hit ? "hit" : "miss");
+    };
+    rec.onerror = () => setSayResult("idle");
+    rec.onend = () => setSayResult((r) => (r === "listening" ? "idle" : r));
+    rec.start();
+  }
 
   const confetti = useMemo(
     () => Array.from({ length: 14 }, (_, i) => ({
@@ -155,6 +183,15 @@ export default function VocabPage() {
             )}
             {item.example && (
               <button className="ghost" onClick={() => speak(item.example!)}>🔊 Example</button>
+            )}
+            {hasRecognition && (
+              <>
+                <button className="blue" onClick={sayIt} disabled={sayResult === "listening"}>
+                  {sayResult === "listening" ? "🎙️ Listening…" : "🎙️ Sag es!"}
+                </button>
+                {sayResult === "hit" && <p className="correct small">👴 „{sayLine[0]}“ ✓</p>}
+                {sayResult === "miss" && <p className="wrong small">👴 „{sayLine[0]}“ — tap 🔊 and try again</p>}
+              </>
             )}
           </div>
         </div>

@@ -53,13 +53,17 @@ const TARGETS: Record<CoreSkillId, Record<15 | 30 | 60, number>> = {
   writing: { 15: 0, 30: 1, 60: 1 },
 };
 
-const SUBS: Record<CoreSkillId, (n: number) => string> = {
+const SUBS: Record<CoreSkillId, (n: number, p: Profile) => string> = {
   vocab: (n) => `${n} flashcard reviews — clear due cards first`,
   grammar: (n) => `${n} exercises in one topic`,
-  listening: (n) => `${n} dictation sentences correct`,
-  speaking: (n) => `${n} sentences understood by the recognizer`,
+  listening: (n, p) => isBeginner(p) ? `${n} word choices correct` : `${n} dictation sentences correct`,
+  speaking: (n, p) => isBeginner(p) ? `${n} words understood by the recognizer` : `${n} sentences understood by the recognizer`,
   writing: () => `one draft (20+ words) — use the umlaut keys`,
 };
+
+function isBeginner(p: Profile): boolean {
+  return p.level === "A0" || p.level === "A1";
+}
 
 export function generatePlan(p: Profile): PlanStep[] {
   // Vocab always first (spaced repetition waits for no one),
@@ -80,12 +84,12 @@ export function generatePlan(p: Profile): PlanStep[] {
       if (skill === "writing" && target === 0 && p.focus.includes("writing")) target = 1;
       // focused skills get ~50% more
       if (p.focus.includes(skill) && skill !== "writing") target = Math.ceil(target * 1.5);
-      return { skill, target, ...META[skill], sub: SUBS[skill](target) };
+      return { skill, target, ...META[skill], sub: SUBS[skill](target, p) };
     })
     .filter((s) => s.target > 0);
 
   // Lesson zero: absolute beginners learn the letter sounds before anything else.
-  if ((p.level === "A0" || p.level === "A1") && !load("abc:done", false)) {
+  if (isBeginner(p) && !load("abc:done", false)) {
     steps.unshift({
       skill: "abc",
       href: "/abc",
