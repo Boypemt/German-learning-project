@@ -12,6 +12,7 @@ import { getBalance } from "@/lib/garden";
 const items = [
   { href: "/garten", icon: "🌻", label: "Garten" },
   { href: "/coach", icon: "🧭", label: "Coach" },
+  { href: "/konto", icon: "👤", label: "Konto" },
 ];
 
 export default function Nav() {

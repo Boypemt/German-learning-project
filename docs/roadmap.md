@@ -35,7 +35,7 @@
 
 ## Phase 4 — Other people, other languages
 
-- [ ] Supabase auth + Postgres for cross-device sync (progress schema already isolated)
+- [x] Supabase auth (magic link) + cross-device progress sync (`user_state` jsonb, RLS) — see `docs/deploy.md`
 - [ ] `data/<lang>/` for a second language to prove the multi-language design
 - [ ] Deck sharing / community decks
 - [ ] PWA (offline use on phone)
