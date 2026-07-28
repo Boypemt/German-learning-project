@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import promptsData from "@/data/de/writing-prompts.json";
 import { load, save, recordActivity } from "@/lib/storage";
+import { logEvent } from "@/lib/telemetry";
 import { OpaSays } from "@/components/Opa";
 import Say from "@/components/Say";
 import Umlauts from "@/components/Umlauts";
@@ -42,7 +43,9 @@ export default function WritingPage() {
 
   function saveDraft() {
     save("writing:drafts", drafts);
-    if (words >= 20) recordActivity("writing");
+    const ok = words >= 20;
+    logEvent("review", { skill: "writing", itemId: p.id, ok });
+    if (ok) recordActivity("writing");
     setSaved(true);
   }
 

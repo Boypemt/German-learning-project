@@ -1,11 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getVocabDeck } from "@/lib/content";
 import { loadProfile } from "@/lib/profile";
+import { getLearnerModel } from "@/lib/model";
+import { newCardsPerSession } from "@/lib/adapt";
 import { buildQueue, review, Rating, type VocabItem } from "@/lib/srs";
 import { recordActivity } from "@/lib/storage";
 import { speak, getRecognition, normalize } from "@/lib/speech";
+import { logEvent } from "@/lib/telemetry";
 import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
 import { Opa, praise, encourage } from "@/components/Opa";
@@ -30,10 +33,14 @@ export default function VocabPage() {
   const [hasRecognition, setHasRecognition] = useState(false);
   const [sayResult, setSayResult] = useState<"idle" | "listening" | "hit" | "miss">("idle");
   const [sayLine, setSayLine] = useState<[string, string]>(["", ""]);
+  const [newCardTarget, setNewCardTarget] = useState(10);
 
   const loadSession = useCallback(() => {
-    const deck = getVocabDeck(loadProfile()?.level ?? "A0");
-    const { due, fresh } = buildQueue("de", deck, 10);
+    const profile = loadProfile();
+    const deck = getVocabDeck(profile?.level ?? "A0");
+    const n = profile ? newCardsPerSession(getLearnerModel(profile).vocab.againRate7d) : 10;
+    setNewCardTarget(n);
+    const { due, fresh } = buildQueue("de", deck, n);
     const q = [...due, ...fresh];
     setQueue(q);
     setSessionSize(q.length);
@@ -47,12 +54,16 @@ export default function VocabPage() {
   useEffect(() => setHasRecognition(!!getRecognition()), []);
 
   const item = queue[0];
+  const shownAtRef = useRef(Date.now());
 
   const grade = useCallback((g: Grade) => {
     const it = queue[0];
     if (!it) return;
     review("de", it.id, g);
     recordActivity("vocab");
+    const ok = g !== Rating.Again;
+    logEvent("review", { skill: "vocab", itemId: it.id, ok, ms: Date.now() - shownAtRef.current });
+    if (!ok) logEvent("again", { itemId: it.id });
     setDone((d) => d + 1);
     if (g === Rating.Again) setAgain((a) => a + 1);
     setRevealed(false);
@@ -86,6 +97,7 @@ export default function VocabPage() {
   useEffect(() => {
     if (item) speak(item.de);
     setSayResult("idle");
+    shownAtRef.current = Date.now();
   }, [item]);
 
   // Optional practice: doesn't affect grading or activity counts.
@@ -99,6 +111,7 @@ export default function VocabPage() {
       const hit = normalize(heard).includes(normalize(stripArticle(item.de)));
       setSayLine(hit ? praise() : encourage());
       setSayResult(hit ? "hit" : "miss");
+      logEvent("sayit", { ok: hit });
     };
     rec.onerror = () => setSayResult("idle");
     rec.onend = () => setSayResult((r) => (r === "listening" ? "idle" : r));
@@ -144,7 +157,7 @@ export default function VocabPage() {
             <p className="muted">„Nichts fällig, mein Kind. Geh an die frische Luft!“ <span className="small">(Nothing due — get some fresh air!)</span></p>
           )}
           <div className="row">
-            <button className="primary" onClick={loadSession}>Learn 10 more words</button>
+            <button className="primary" onClick={loadSession}>Learn {newCardTarget} more words</button>
           </div>
         </div>
       </>
@@ -159,6 +172,13 @@ export default function VocabPage() {
       <NextStepBanner skill="vocab" />
       <div className="progressbar"><div style={{ width: `${pct}%` }} /></div>
       <p className="muted small">{queue.length} left · {done} done · say it out loud before flipping</p>
+      {newCardTarget !== 10 && (
+        <p className="muted small">
+          {newCardTarget < 10
+            ? `🎯 ${newCardTarget} new words today — steadying the pace after a few too many "Again"s.`
+            : `🚀 ${newCardTarget} new words today — you're cruising, so I added more.`}
+        </p>
+      )}
 
       <div className="flip-scene">
         <div className={"flip-inner" + (revealed ? " flipped" : "")}>

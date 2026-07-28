@@ -7,6 +7,7 @@
 // The API key for the coach (sl:coach:key) never leaves the device.
 
 import { getSupabase } from "./supabase";
+import { trimEvents, type TelemetryEvent } from "./telemetry";
 
 const EXCLUDE = new Set(["sl:coach:key", "sl:sync:user"]);
 
@@ -32,6 +33,11 @@ export function collectState(): Record<string, unknown> {
     } catch {
       // skip unparsable entries
     }
+  }
+  // Defensive re-trim: the ring buffer is already capped on write, but this
+  // guarantees the synced payload never carries more than MAX_EVENTS either.
+  if (Array.isArray(out["sl:events"])) {
+    out["sl:events"] = trimEvents(out["sl:events"] as TelemetryEvent[]);
   }
   return out;
 }

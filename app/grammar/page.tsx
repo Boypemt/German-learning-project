@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import topicsData from "@/data/de/grammar-topics.json";
 import { normalize } from "@/lib/speech";
 import { load, save, recordActivity } from "@/lib/storage";
+import { logEvent } from "@/lib/telemetry";
 import { sortByLevel } from "@/lib/content";
 import { loadProfile } from "@/lib/profile";
 import { praise, encourage } from "@/components/Opa";
@@ -28,11 +29,13 @@ function ExerciseBlock({ ex, exId, isDone, onDone }: {
   const [result, setResult] = useState<"" | "correct" | "wrong">("");
   const [line, setLine] = useState<[string, string]>(["", ""]);
   const [showHint, setShowHint] = useState(false);
+  const shownAtRef = useRef(Date.now());
 
   function check() {
     const ok = normalize(val) === normalize(ex.a);
     setResult(ok ? "correct" : "wrong");
     setLine(ok ? praise() : encourage());
+    logEvent("review", { skill: "grammar", itemId: exId, ok, ms: Date.now() - shownAtRef.current });
     if (ok) {
       recordActivity("grammar");
       onDone(exId);

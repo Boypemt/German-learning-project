@@ -43,6 +43,12 @@ function saveStore(lang: string, store: CardStore): void {
   save(`cards:${lang}`, store);
 }
 
+/** Raw FSRS card store — the learner model reads state/stability off this
+ *  to judge which vocab is seen vs. matured. */
+export function getCardStore(lang = "de"): CardStore {
+  return loadStore(lang);
+}
+
 export interface QueueResult {
   due: VocabItem[]; // learned cards due for review
   fresh: VocabItem[]; // never-seen items

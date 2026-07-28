@@ -6,13 +6,15 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { getVocabDeck } from "@/lib/content";
-import { loadProfile, LEVEL_LABELS, type Profile } from "@/lib/profile";
+import { getVocabDeck, findVocabById } from "@/lib/content";
+import { loadProfile, LEVEL_LABELS, SKILL_LABELS, type Profile } from "@/lib/profile";
 import { load, save, getStreak, getWeekSkillCounts } from "@/lib/storage";
 import { getTotalReviews } from "@/lib/gamify";
 import { stats } from "@/lib/srs";
-import { buildCoachPrompt, askClaude, type CoachData } from "@/lib/ai";
+import { getLearnerModel } from "@/lib/model";
+import { buildCoachPrompt, askClaude, type CoachData, type ConfusionWord } from "@/lib/ai";
 import { OpaSays } from "@/components/Opa";
+import Say from "@/components/Say";
 
 export default function CoachPage() {
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -30,6 +32,18 @@ export default function CoachPage() {
     setAdvice(load<string>("coach:advice", ""));
     if (p) {
       const st = stats("de", getVocabDeck(p.level));
+      const model = getLearnerModel(p);
+      const confusionWords: ConfusionWord[] = model.confusions.map((c) => {
+        const item = findVocabById(c.itemId);
+        const picked = findVocabById(c.pickedId);
+        return {
+          de: item?.de ?? c.itemId,
+          en: item?.en ?? "",
+          confusedWithDe: picked?.de ?? c.pickedId,
+          confusedWithEn: picked?.en ?? "",
+          count: c.count,
+        };
+      });
       setData({
         profile: p,
         streak: getStreak(),
@@ -37,6 +51,8 @@ export default function CoachPage() {
         weekBySkill: getWeekSkillCounts(),
         wordsSeen: st.seen,
         wordsTotal: st.total,
+        model,
+        confusionWords,
       });
     }
   }, []);
@@ -95,6 +111,63 @@ export default function CoachPage() {
           🔥 {data.streak}-day streak · {data.totalReviews} total reviews · {data.wordsSeen}/{data.wordsTotal} words started
         </p>
         <Link href="/start"><button className="ghost">↺ Redo the interview (new plan)</button></Link>
+      </div>
+
+      <div className="card">
+        <h2 style={{ marginTop: 0 }}>📊 Opas Zeugnis</h2>
+        <p className="muted small" style={{ marginTop: 0 }}>What I've noticed about your practice this week.</p>
+
+        {data.model.cruising.length > 0 && (
+          <p style={{ margin: "8px 0" }}>
+            <strong>💪 Läuft gut — going well:</strong>{" "}
+            {data.model.cruising.map((s, i) => (
+              <span key={s}>
+                {i > 0 && ", "}
+                {SKILL_LABELS[s]} ({Math.round(data.model.perSkill[s].accuracy7d * 100)}%
+                {Math.abs(data.model.perSkill[s].trend) >= 0.01 && (
+                  <> {data.model.perSkill[s].trend > 0 ? "▲" : "▼"}{Math.round(Math.abs(data.model.perSkill[s].trend) * 100)}%</>
+                )})
+              </span>
+            ))}
+          </p>
+        )}
+
+        {data.model.struggling.length > 0 && (
+          <p style={{ margin: "8px 0" }}>
+            <strong>🎯 Braucht Übung — needs work:</strong>{" "}
+            {data.model.struggling.map((s, i) => (
+              <span key={s}>
+                {i > 0 && ", "}
+                {SKILL_LABELS[s]} ({Math.round(data.model.perSkill[s].accuracy7d * 100)}% accuracy
+                {data.model.perSkill[s].skipRate > 0.1 && <>, {Math.round(data.model.perSkill[s].skipRate * 100)}% skipped</>})
+              </span>
+            ))}
+          </p>
+        )}
+
+        {data.confusionWords.length > 0 && (
+          <>
+            <p style={{ margin: "8px 0 4px" }}><strong>🔀 Du verwechselst oft — you often mix up:</strong></p>
+            <ul style={{ margin: "0 0 8px", paddingLeft: 20 }}>
+              {data.confusionWords.map((c, i) => (
+                <li key={i} className="small">
+                  <Say text={c.confusedWithDe}>{c.confusedWithDe}</Say> ({c.confusedWithEn}) statt{" "}
+                  <Say text={c.de}>{c.de}</Say> ({c.en}) — {c.count}×
+                </li>
+              ))}
+            </ul>
+          </>
+        )}
+
+        {data.model.readyForLevelUp && (
+          <div className="feedback-banner ok">🎉 Na also! You're ready for the next level — ask below or in the interview.</div>
+        )}
+        {data.model.overloaded && (
+          <div className="feedback-banner no">😮‍💨 Der Plan ist gerade zu groß — the plan looks like too much this week. Consider fewer minutes/day.</div>
+        )}
+        {data.model.cruising.length === 0 && data.model.struggling.length === 0 && data.confusionWords.length === 0 && (
+          <p className="muted small">Not enough data yet this week — a few more sessions and I'll have more to say.</p>
+        )}
       </div>
 
       <div className="card">

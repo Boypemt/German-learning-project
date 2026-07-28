@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import culture from "@/data/de/culture.json";
 import { isCloudConfigured } from "@/lib/supabase";
@@ -9,7 +9,9 @@ import { stats } from "@/lib/srs";
 import { getStreak, getTodayCount, getTodaySkillCounts } from "@/lib/storage";
 import { getXp, getLevel } from "@/lib/gamify";
 import { getBalance, getOwned, ITEMS } from "@/lib/garden";
-import { loadProfile, generatePlan, type Profile, type PlanStep } from "@/lib/profile";
+import { loadProfile, saveProfile, generatePlan, nextLevel, prevLevel, LEVEL_LABELS, type Profile, type PlanStep } from "@/lib/profile";
+import { getLearnerModel } from "@/lib/model";
+import { getAdaptation, isLevelUpSnoozed, snoozeLevelUp, isLevelDownSnoozed, snoozeLevelDown, type Adaptation } from "@/lib/adapt";
 import { OpaSays } from "@/components/Opa";
 import Say from "@/components/Say";
 import { speak } from "@/lib/speech";
@@ -43,30 +45,67 @@ export default function Dashboard() {
   const [coins, setCoins] = useState(0);
   const [gardenCount, setGardenCount] = useState(0);
   const [ready, setReady] = useState(false);
+  const [adaptation, setAdaptation] = useState<Adaptation | null>(null);
+  const [showLevelUp, setShowLevelUp] = useState(false);
+  const [showLevelDown, setShowLevelDown] = useState(false);
 
-  useEffect(() => {
+  const refresh = useCallback(() => {
     // re-runs on every activity AND when cloud sync applies pulled state,
     // so a fresh device shows the dashboard the moment progress arrives
-    function init() {
-      const p = loadProfile();
-      setProfile(p);
-      if (p) {
-        setPlan(generatePlan(p));
-        setCounts(getTodaySkillCounts());
-        setS(stats("de", getVocabDeck(p.level)));
-        setStreak(getStreak());
-        setToday(getTodayCount());
-        setXp(getXp());
-        setLvl(getLevel());
-        setCoins(getBalance());
-        setGardenCount(getOwned().length);
-      }
-      setReady(true);
+    const p = loadProfile();
+    setProfile(p);
+    if (p) {
+      const model = getLearnerModel(p);
+      const adapt = getAdaptation(p, model);
+      setPlan(generatePlan(p, model));
+      setAdaptation(adapt);
+      setShowLevelUp(adapt.readyForLevelUp && !!nextLevel(p.level) && !isLevelUpSnoozed());
+      setShowLevelDown(adapt.levelDownSuggested && !!prevLevel(p.level) && !isLevelDownSnoozed());
+      setCounts(getTodaySkillCounts());
+      setS(stats("de", getVocabDeck(p.level)));
+      setStreak(getStreak());
+      setToday(getTodayCount());
+      setXp(getXp());
+      setLvl(getLevel());
+      setCoins(getBalance());
+      setGardenCount(getOwned().length);
     }
-    init();
-    window.addEventListener("sl:coins", init);
-    return () => window.removeEventListener("sl:coins", init);
+    setReady(true);
   }, []);
+
+  useEffect(() => {
+    refresh();
+    window.addEventListener("sl:coins", refresh);
+    return () => window.removeEventListener("sl:coins", refresh);
+  }, [refresh]);
+
+  function acceptLevelUp() {
+    if (!profile) return;
+    const next = nextLevel(profile.level);
+    if (!next) return;
+    saveProfile({ ...profile, level: next });
+    setShowLevelUp(false);
+    refresh();
+  }
+
+  function declineLevelUp() {
+    snoozeLevelUp();
+    setShowLevelUp(false);
+  }
+
+  function acceptLevelDown() {
+    if (!profile) return;
+    const prev = prevLevel(profile.level);
+    if (!prev) return;
+    saveProfile({ ...profile, level: prev });
+    setShowLevelDown(false);
+    refresh();
+  }
+
+  function declineLevelDown() {
+    snoozeLevelDown();
+    setShowLevelDown(false);
+  }
 
   if (!ready) return <p className="muted">Loading…</p>;
 
@@ -112,6 +151,38 @@ export default function Dashboard() {
         mood={allDone ? "cheer" : "happy"}
         size={92}
       />
+
+      {showLevelUp && nextLevel(profile.level) && (
+        <div className="card culture center">
+          <p style={{ fontWeight: 700, fontSize: 16, margin: "0 0 4px" }}>
+            🎉 Du bist bereit für {nextLevel(profile.level)}!
+          </p>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            You're ready for {LEVEL_LABELS[nextLevel(profile.level)!]} — your vocab, again-rate, and listening
+            accuracy all check out.
+          </p>
+          <div className="row">
+            <button className="good" onClick={acceptLevelUp}>✓ Ja, hoch damit!</button>
+            <button className="ghost" onClick={declineLevelUp}>Not yet — ask again in 2 weeks</button>
+          </div>
+        </div>
+      )}
+
+      {showLevelDown && prevLevel(profile.level) && (
+        <div className="card center">
+          <p style={{ fontWeight: 700, fontSize: 16, margin: "0 0 4px" }}>
+            🤔 Vielleicht {prevLevel(profile.level)} statt {profile.level}?
+          </p>
+          <p className="muted small" style={{ marginTop: 0 }}>
+            You've been marking over half your vocab &quot;Again&quot; this week — {prevLevel(profile.level)} might
+            fit better for now.
+          </p>
+          <div className="row">
+            <button onClick={acceptLevelDown}>✓ Ja, zurück zu {prevLevel(profile.level)}</button>
+            <button className="ghost" onClick={declineLevelDown}>No — keep going, ask again in 2 weeks</button>
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
@@ -162,6 +233,17 @@ export default function Dashboard() {
           <Link href="/start" style={{ textDecoration: "underline" }}>redo the interview</Link>.
         </p>
       </div>
+
+      {adaptation && adaptation.notes.length > 0 && (
+        <div className="card" style={{ background: "var(--card2)" }}>
+          <strong style={{ fontSize: 14 }}>🧓 Opa hat den Plan angepasst</strong>
+          <ul style={{ margin: "8px 0 0", paddingLeft: 20 }}>
+            {adaptation.notes.map((n, i) => (
+              <li key={i} className="small" style={{ margin: "4px 0" }}>{n}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <div className="grid">
         <div className="card stat">

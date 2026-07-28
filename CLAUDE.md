@@ -25,6 +25,8 @@ App is called **"Bei Opa"** — mascot is Opa, a warm German grandfather (SVG in
 - Content: static JSON under `data/de/`. Progress: localStorage first (keys prefixed `sl:`, see `lib/storage.ts`).
 - Cloud (optional): Supabase auth (magic link) + whole-state jsonb sync in `lib/sync.ts`/`lib/supabase.ts`; table `user_state` with RLS (`supabase/schema.sql`); account UI at `/konto`. App must always keep working without env vars (local-only mode). Never sync `sl:coach:key`.
 - Keep German content out of logic — everything language-specific belongs in `data/<lang>/`.
+- **Telemetry:** always log behavioral events via `logEvent()` in `lib/telemetry.ts` — never write ad-hoc analytics elsewhere. Events ring-buffer into `sl:events` (capped at ~800); every write also updates the per-day/per-skill `sl:rollups` aggregate, so accuracy history survives ring-buffer trimming. `lib/model.ts`'s `buildLearnerModel()` is the pure consumer of rollups+events+FSRS+profile (`getLearnerModel()` is the impure assembler) — it feeds both "Opas Zeugnis" on `/coach` and the AI coach prompt. Adding a new signal means: add the event type + payload to `lib/telemetry.ts`, log it at the point of interaction, then read it in `lib/model.ts` — don't invent a second event log.
+- **Adaptation:** all rule-based adaptation (plan target adjustments, level-up/down suggestions, adaptive listening/vocab/speaking difficulty, the confusion drill) lives in `lib/adapt.ts` — `computeAdaptation()` is the pure core (unit-test every rule with a synthetic `LearnerModel`), `getAdaptation()` is the impure day-cached wrapper (`sl:adapt`, recomputed once per calendar day so targets don't reshuffle on every reload). `generatePlan(profile, model?)` in `lib/profile.ts` applies it when a model is passed; omit `model` for the plain unadapted plan (that's what `lib/model.ts` itself uses internally, to avoid a plan-needs-model-needs-plan cycle). Every rule must stay deterministic (no randomness in the *decision*, only in shuffled display order) and every adaptation that changes what the learner sees must come with a human-readable note or banner — Opa announces what changed and why, never a silent adjustment.
 
 ## Commands
 
@@ -32,7 +34,11 @@ App is called **"Bei Opa"** — mascot is Opa, a warm German grandfather (SVG in
 npm run dev      # local dev
 npm run build    # must pass before pushing (Vercel runs this)
 npm run lint
+npm test         # vitest — pure logic + data/de/*.json validation
+npm run test:e2e # playwright (chromium) smoke suite against the dev server
 ```
+
+`npm test && npm run test:e2e` must pass before pushing.
 
 ## License rules (important)
 

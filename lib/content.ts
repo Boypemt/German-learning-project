@@ -45,6 +45,14 @@ const ALL_VOCAB: VocabItem[] = [
   ...(vocabC2 as VocabItem[]),
 ].map((v) => (IMAGES[v.id] ? { ...v, img: IMAGES[v.id].src } : v));
 
+const VOCAB_BY_ID = new Map(ALL_VOCAB.map((v) => [v.id, v]));
+
+/** Look up a vocab item by id regardless of level — used to turn the
+ *  learner model's raw confusion ids back into readable German/English. */
+export function findVocabById(id: string): VocabItem | undefined {
+  return VOCAB_BY_ID.get(id);
+}
+
 const ALL_SENTENCES: Sentence[] = [
   ...(sentA1 as Sentence[]),
   ...(sentA2 as Sentence[]),
