@@ -45,16 +45,23 @@ export function applyState(state: Record<string, unknown>): void {
   window.dispatchEvent(new CustomEvent("sl:coins"));
 }
 
-export async function pushState(): Promise<void> {
-  const sb = getSupabase();
-  if (!sb) return;
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return;
-  await sb.from("user_state").upsert({
-    user_id: user.id,
-    state: collectState(),
-    updated_at: new Date().toISOString(),
-  });
+export async function pushState(): Promise<boolean> {
+  try {
+    const sb = getSupabase();
+    if (!sb) return false;
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return false;
+    const { error } = await sb.from("user_state").upsert({
+      user_id: user.id,
+      state: collectState(),
+      updated_at: new Date().toISOString(),
+    });
+    if (error) console.warn("Sync push failed:", error.message);
+    return !error;
+  } catch (e) {
+    console.warn("Sync push failed:", e);
+    return false;
+  }
 }
 
 export async function pullState(): Promise<boolean> {
@@ -100,6 +107,6 @@ export function schedulePush(): void {
   if (pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(() => {
     pushTimer = null;
-    void pushState();
+    void pushState().catch(() => {});
   }, 5000);
 }

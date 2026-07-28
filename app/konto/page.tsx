@@ -74,9 +74,9 @@ export default function KontoPage() {
 
   async function doPush() {
     setBusy(true);
-    await pushState();
+    const ok = await pushState();
     setBusy(false);
-    setMsg("☁️ Progress saved to the cloud.");
+    setMsg(ok ? "☁️ Progress saved to the cloud." : "⚠️ Sync failed — check your internet connection, or sign out and back in.");
   }
 
   async function doPull() {

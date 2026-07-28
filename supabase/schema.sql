@@ -21,3 +21,8 @@ create policy "update own state"
   on public.user_state for update
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);
+
+-- Guard: no single user can store more than ~256 KB of state
+-- (protects the free-tier database from abuse or runaway bugs).
+alter table public.user_state
+  add constraint state_size_limit check (pg_column_size(state) < 262144);

@@ -15,6 +15,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <SyncProvider />
         <Nav />
         <main className="container">{children}</main>
+        <footer className="site-footer">
+          Sentences from{" "}
+          <a href="https://tatoeba.org" target="_blank" rel="noreferrer">Tatoeba</a> (CC BY 2.0 FR) ·
+          Photos via <a href="https://openverse.org" target="_blank" rel="noreferrer">Openverse</a> (CC0/PD) ·
+          Made with ❤️ und Opa
+        </footer>
       </body>
     </html>
   );
