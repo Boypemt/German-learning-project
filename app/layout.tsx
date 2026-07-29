@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Analytics } from "@vercel/analytics/next";
 import Nav from "@/components/Nav";
 import SyncProvider from "@/components/SyncProvider";
 import "./globals.css";
@@ -21,6 +22,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Photos via <a href="https://openverse.org" target="_blank" rel="noreferrer">Openverse</a> (CC0/PD) ·
           Made with ❤️ und Opa
         </footer>
+        <Analytics />
       </body>
     </html>
   );
