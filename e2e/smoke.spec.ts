@@ -68,5 +68,27 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
     await expect(page.getByText(/local-only mode/i)).toBeVisible();
   });
 
+  await test.step("/abc: replay controls exist and speak() fires when a question appears", async () => {
+    // Spy on speechSynthesis.speak before the next navigation so app code
+    // picks up the wrapped version — guards against the regression where
+    // audio silently stopped firing when a setTimeout wrapper was removed.
+    await page.addInitScript(() => {
+      (window as unknown as { __speakCalls: string[] }).__speakCalls = [];
+      if (window.speechSynthesis) {
+        const orig = window.speechSynthesis.speak.bind(window.speechSynthesis);
+        window.speechSynthesis.speak = (u: SpeechSynthesisUtterance) => {
+          (window as unknown as { __speakCalls: string[] }).__speakCalls.push(u.text);
+          return orig(u);
+        };
+      }
+    });
+    await page.goto("/abc");
+    await page.getByRole("button", { name: /Quiz starten/ }).click();
+    await expect(page.getByRole("button", { name: /Nochmal hören/ })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Langsam/ })).toBeVisible();
+    const speakCalls = await page.evaluate(() => (window as unknown as { __speakCalls: string[] }).__speakCalls.length);
+    expect(speakCalls, "speechSynthesis.speak should fire when a quiz question appears").toBeGreaterThan(0);
+  });
+
   expect(pageErrors, `unexpected page errors: ${pageErrors.map((e) => e.message).join("; ")}`).toEqual([]);
 });

@@ -67,7 +67,8 @@ describe("data/de/alphabet.json", () => {
 });
 
 describe("data/de/abc-quiz.json", () => {
-  const items = abcQuiz as Array<{ id: string; correct: string; correctEn: string; decoys: [string, string] }>;
+  type Decoy = { text: string; realWord?: boolean };
+  const items = abcQuiz as Array<{ id: string; correct: string; correctEn: string; decoys: [Decoy, Decoy] }>;
 
   it("has required fields on every item", () => {
     for (const q of items) {
@@ -75,7 +76,10 @@ describe("data/de/abc-quiz.json", () => {
       expect(q.correct, `correct on ${q.id}`).toBeTruthy();
       expect(q.correctEn, `correctEn on ${q.id}`).toBeTruthy();
       expect(q.decoys.length, `decoys on ${q.id}`).toBe(2);
-      for (const d of q.decoys) expect(d, `decoy on ${q.id}`).toBeTruthy();
+      for (const d of q.decoys) {
+        expect(d.text, `decoy text on ${q.id}`).toBeTruthy();
+        expect(typeof d.realWord === "boolean" || d.realWord === undefined, `decoy.realWord on ${q.id}`).toBe(true);
+      }
     }
   });
 
@@ -83,13 +87,14 @@ describe("data/de/abc-quiz.json", () => {
 
   it("never lists the correct answer as one of its own decoys", () => {
     for (const q of items) {
-      expect(q.decoys, `decoys for ${q.id}`).not.toContain(q.correct);
+      const texts = q.decoys.map((d) => d.text);
+      expect(texts, `decoys for ${q.id}`).not.toContain(q.correct);
     }
   });
 
   it("has no duplicate decoys within a question", () => {
     for (const q of items) {
-      expect(q.decoys[0]).not.toBe(q.decoys[1]);
+      expect(q.decoys[0].text).not.toBe(q.decoys[1].text);
     }
   });
 });

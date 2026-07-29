@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import alphabetData from "@/data/de/alphabet.json";
 import quizData from "@/data/de/abc-quiz.json";
+import { buildQuizQuestions, type QuizItem, type QuizQuestion } from "@/lib/abcQuiz";
 import { speak, speakSeq } from "@/lib/speech";
 import { load, save, recordActivity } from "@/lib/storage";
 import { OpaSays, praise, encourage } from "@/components/Opa";
@@ -21,30 +22,11 @@ interface AlphabetEntry {
   soundEn: string;
   examples: { de: string; en: string }[];
 }
-interface QuizItem { id: string; correct: string; correctEn: string; decoys: [string, string]; }
-interface QuizQuestion { correct: string; correctEn: string; options: string[]; }
 
 const entries = alphabetData as AlphabetEntry[];
 const quizPool = quizData as QuizItem[];
 const alphabetEntries = entries.filter((e) => e.type === "letter" || e.type === "special");
 const comboEntries = entries.filter((e) => e.type === "combo");
-
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function buildQuestions(): QuizQuestion[] {
-  return shuffle(quizPool).map((item) => ({
-    correct: item.correct,
-    correctEn: item.correctEn,
-    options: shuffle([item.correct, ...item.decoys]),
-  }));
-}
 
 function AbcCard({ entry }: { entry: AlphabetEntry }) {
   function tap() {
@@ -73,14 +55,26 @@ export default function AbcPage() {
 
   const q = started ? questions[qIdx] : null;
 
+  // Speak the target word whenever a (new) question becomes the current
+  // one — covers both "quiz just started" and "moved to next question" in
+  // one place, so neither call site can forget it.
+  useEffect(() => {
+    if (q) speak(q.correct);
+  }, [q]);
+
+  // Auto-play the correct answer once, right alongside the feedback —
+  // regardless of whether the learner got it right or wrong.
+  useEffect(() => {
+    if (selected && q) speak(q.correct);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected]);
+
   function startQuiz() {
-    const qs = buildQuestions();
-    setQuestions(qs);
+    setQuestions(buildQuizQuestions(quizPool));
     setQIdx(0);
     setScore(0);
     setSelected(null);
     setStarted(true);
-    speak(qs[0].correct);
   }
 
   function selectOption(opt: string) {
@@ -103,10 +97,8 @@ export default function AbcPage() {
       if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("sl:coins"));
       return;
     }
-    const next = qIdx + 1;
-    setQIdx(next);
+    setQIdx((i) => i + 1);
     setSelected(null);
-    speak(questions[next].correct);
   }
 
   return (
@@ -153,20 +145,35 @@ export default function AbcPage() {
           <p className="muted small">Frage {qIdx + 1}/{questions.length}</p>
           <div className="row">
             <button className="blue" onClick={() => speak(q.correct)}>🔊 Nochmal hören</button>
+            <button onClick={() => speak(q.correct, "de-DE", 0.65)}>🐢 Langsam</button>
           </div>
           <div className="row" style={{ flexDirection: "column", alignItems: "stretch" }}>
             {q.options.map((opt) => {
-              const isCorrect = opt === q.correct;
-              const cls = !selected ? "ghost" : isCorrect ? "good" : opt === selected ? "bad" : "ghost";
+              const isCorrect = opt.text === q.correct;
+              const cls = !selected ? "ghost" : isCorrect ? "good" : opt.text === selected ? "bad" : "ghost";
+              // Before answering: tapping always selects. After answering: only
+              // real-word options (the correct one, always; a decoy only if
+              // data/de/abc-quiz.json marks it realWord) are tappable-to-hear —
+              // speaking a made-up non-word would teach a wrong pronunciation.
+              const tappableToHear = !!selected && opt.realWord;
               return (
-                <button key={opt} className={cls + " big"} disabled={!!selected} onClick={() => selectOption(opt)}>
-                  {opt}
+                <button
+                  key={opt.text}
+                  className={cls + " big"}
+                  disabled={!!selected && !opt.realWord}
+                  onClick={() => (selected ? tappableToHear && speak(opt.text) : selectOption(opt.text))}
+                  title={tappableToHear ? "🔊 anhören" : undefined}
+                >
+                  {opt.text}
                 </button>
               );
             })}
           </div>
           {selected && (
             <>
+              <p className="muted small center" style={{ margin: "6px 0 0" }}>
+                Tippe die richtige Antwort an, um sie noch einmal zu hören.
+              </p>
               <div className={"feedback-banner " + (selected === q.correct ? "ok" : "no")}>
                 👴 „{line[0]}“ {selected === q.correct ? "✓" : `— richtig: „${q.correct}“ (${q.correctEn})`}
               </div>
