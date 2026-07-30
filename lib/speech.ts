@@ -4,26 +4,119 @@
 // Defaults tuned for "Opa": slightly slower and lower-pitched than the
 // stock browser voice, so it feels like a patient older speaker.
 
+import { load, save } from "./storage";
+
 // Bumped by every speak()/speakSeq() call. A speakSeq() chain checks this
 // before queuing its next utterance, so a later tap (which bumps it again)
 // silently kills any still-running chain instead of overlapping it.
 let seqToken = 0;
 
-function pickVoice(lang: string): SpeechSynthesisVoice | undefined {
-  return window.speechSynthesis.getVoices().find((v) => v.lang.startsWith(lang.slice(0, 2)));
+// ---- voice selection & caching ----
+// getVoices() is often EMPTY on the very first call (the list loads
+// asynchronously), so calling it per-utterance tends to land on the
+// browser's default voice — frequently a REMOTE one (Chrome's "Google
+// Deutsch" synthesizes on Google's servers) that adds real network
+// latency. We cache the chosen voice and only ever recompute it when the
+// voice list itself changes, never per utterance.
+let cachedVoice: SpeechSynthesisVoice | null = null;
+let cachedForLang: string | null = null;
+
+export interface VoiceOption {
+  voiceURI: string;
+  name: string;
+  lang: string;
+  localService: boolean;
+}
+
+/**
+ * Pure selection logic (unit-tested separately from the browser APIs):
+ * honour a stored preference first, then prefer an offline (localService)
+ * voice — instant, no network round-trip — then just take whatever matches.
+ */
+export function pickBestVoice<T extends VoiceOption>(
+  voices: T[],
+  lang: string,
+  preferredURI?: string | null
+): T | undefined {
+  const prefix = lang.slice(0, 2).toLowerCase();
+  const matching = voices.filter((v) => v.lang.toLowerCase().startsWith(prefix));
+  if (preferredURI) {
+    const preferred = matching.find((v) => v.voiceURI === preferredURI);
+    if (preferred) return preferred;
+  }
+  return matching.find((v) => v.localService) ?? matching[0];
+}
+
+export function getVoicePreference(): string | null {
+  return load<string | null>("voice", null);
+}
+
+/** Pass null to clear the preference and go back to automatic selection. */
+export function setVoicePreference(voiceURI: string | null): void {
+  save("voice", voiceURI);
+  cachedVoice = null; // force a re-pick using the new preference
+}
+
+/** All installed German voices, for the picker on /konto. */
+export function getGermanVoices(): VoiceOption[] {
+  if (typeof window === "undefined" || !window.speechSynthesis) return [];
+  return window.speechSynthesis
+    .getVoices()
+    .filter((v) => v.lang.toLowerCase().startsWith("de"))
+    .map((v) => ({ voiceURI: v.voiceURI, name: v.name, lang: v.lang, localService: v.localService }));
+}
+
+function resolveVoice(lang: string): SpeechSynthesisVoice | undefined {
+  if (cachedVoice && cachedForLang === lang) return cachedVoice;
+  const chosen = pickBestVoice(window.speechSynthesis.getVoices(), lang, getVoicePreference());
+  if (chosen) {
+    cachedVoice = chosen;
+    cachedForLang = lang;
+  }
+  return chosen;
+}
+
+if (typeof window !== "undefined" && window.speechSynthesis) {
+  // Voices load asynchronously — when the list changes (e.g. finally
+  // populates), drop the cache so the next speak() re-picks properly
+  // instead of being stuck with whatever (possibly nothing) was cached.
+  window.speechSynthesis.addEventListener("voiceschanged", () => {
+    cachedVoice = null;
+  });
+}
+
+// ---- engine warm-up ----
+let warmed = false;
+
+/**
+ * Call once on a real user gesture (tap/click/keydown) to nudge the engine
+ * into initializing its voice/audio pipeline before the first real
+ * utterance — tied to a genuine interaction so autoplay policies allow it.
+ * Silent (volume 0) and a no-op after the first call.
+ */
+export function warmUpSpeech(): void {
+  if (warmed || typeof window === "undefined" || !window.speechSynthesis) return;
+  warmed = true;
+  const u = new SpeechSynthesisUtterance(" ");
+  u.volume = 0;
+  window.speechSynthesis.speak(u);
 }
 
 export function speak(text: string, lang = "de-DE", rate = 0.92, pitch = 0.85): void {
   seqToken++;
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  const synth = window.speechSynthesis;
+  // An unconditional cancel() right before speak() is a known source of
+  // dropped/delayed utterances in Chrome — only cancel if there's actually
+  // something playing or queued.
+  if (synth.speaking || synth.pending) synth.cancel();
   const u = new SpeechSynthesisUtterance(text);
   u.lang = lang;
   u.rate = rate;
   u.pitch = pitch;
-  const voice = pickVoice(lang);
+  const voice = resolveVoice(lang);
   if (voice) u.voice = voice;
-  window.speechSynthesis.speak(u);
+  synth.speak(u);
 }
 
 // Speaks a list of texts back-to-back, each one starting only once the
@@ -33,8 +126,9 @@ export function speakSeq(texts: string[], lang = "de-DE", rate = 0.92, pitch = 0
   seqToken++;
   const token = seqToken;
   if (typeof window === "undefined" || !window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const voice = pickVoice(lang);
+  const synth = window.speechSynthesis;
+  if (synth.speaking || synth.pending) synth.cancel();
+  const voice = resolveVoice(lang);
 
   function speakAt(i: number) {
     if (token !== seqToken || i >= texts.length) return;
@@ -45,7 +139,7 @@ export function speakSeq(texts: string[], lang = "de-DE", rate = 0.92, pitch = 0
     if (voice) u.voice = voice;
     u.onend = () => speakAt(i + 1);
     u.onerror = () => speakAt(i + 1);
-    window.speechSynthesis.speak(u);
+    synth.speak(u);
   }
 
   speakAt(0);

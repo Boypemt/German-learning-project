@@ -5,7 +5,56 @@
 import { useEffect, useState } from "react";
 import { getSupabase, isCloudConfigured } from "@/lib/supabase";
 import { pushState, pullState } from "@/lib/sync";
+import { speak, getGermanVoices, getVoicePreference, setVoicePreference, type VoiceOption } from "@/lib/speech";
 import { OpaSays } from "@/components/Opa";
+
+function VoiceCard() {
+  const [voices, setVoices] = useState<VoiceOption[]>([]);
+  const [pref, setPref] = useState<string | null>(null);
+
+  useEffect(() => {
+    function refresh() {
+      setVoices(getGermanVoices());
+    }
+    refresh();
+    setPref(getVoicePreference());
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      window.speechSynthesis.addEventListener("voiceschanged", refresh);
+      return () => window.speechSynthesis.removeEventListener("voiceschanged", refresh);
+    }
+  }, []);
+
+  function choose(voiceURI: string | null) {
+    setVoicePreference(voiceURI);
+    setPref(voiceURI);
+    speak("Hallo, ich bin Opa.");
+  }
+
+  return (
+    <div className="card">
+      <h2 style={{ marginTop: 0 }}>🔊 Stimme — voice</h2>
+      <p className="muted small" style={{ marginTop: 0 }}>
+        Offline voices (tagged below) speak instantly; others may synthesize over the network and feel slower.
+      </p>
+      {voices.length === 0 ? (
+        <p className="muted small" style={{ marginBottom: 0 }}>
+          No German voices found yet — this can take a moment on first load, or check your OS/browser speech settings.
+        </p>
+      ) : (
+        <div className="row left" style={{ flexWrap: "wrap" }}>
+          <button className={pref === null ? "primary" : "ghost"} onClick={() => choose(null)}>
+            Automatisch (empfohlen)
+          </button>
+          {voices.map((v) => (
+            <button key={v.voiceURI} className={pref === v.voiceURI ? "primary" : "ghost"} onClick={() => choose(v.voiceURI)}>
+              {v.name}{v.localService ? " (offline)" : ""}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function KontoPage() {
   const [email, setEmail] = useState("");
@@ -42,6 +91,7 @@ export default function KontoPage() {
             (see <code>docs/deploy.md</code>).
           </p>
         </div>
+        <VoiceCard />
       </>
     );
   }
@@ -164,6 +214,8 @@ export default function KontoPage() {
           </div>
         </>
       )}
+
+      <VoiceCard />
 
       {msg && <div className="card"><p style={{ margin: 0 }}>{msg}</p></div>}
     </>

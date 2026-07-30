@@ -28,10 +28,15 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
     await expect(firstStep).toContainText("Das ABC");
   });
 
-  await test.step("/vocab: flip a card and grade it", async () => {
+  await test.step("/vocab: recall guess, then flip and grade", async () => {
     await page.goto("/vocab");
     await expect(page.locator(".flip-scene")).toBeVisible();
-    await page.getByRole("button", { name: "Show answer" }).click();
+    // Recall prompt is on by default — type a guess, check & reveal (never
+    // auto-grades: the learner still picks Again/Hard/Good/Easy themselves).
+    const recallInput = page.getByPlaceholder("What does this word mean?");
+    await expect(recallInput).toBeVisible();
+    await recallInput.fill("something");
+    await page.getByRole("button", { name: "Check & reveal" }).click();
     await expect(page.locator(".flip-inner")).toHaveClass(/flipped/);
     await page.getByRole("button", { name: "Good", exact: true }).click();
   });
@@ -48,12 +53,14 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
     await expect(page.getByRole("button", { name: /Weiter/ })).toBeVisible();
   });
 
-  await test.step("/grammar checks one exercise", async () => {
+  await test.step("/grammar: A0/A1 learners get tap-to-fill tiles, not text input", async () => {
     await page.goto("/grammar");
     await page.locator(".topic-head").first().click();
-    const input = page.locator(".topic-body input[type='text']").first();
-    await input.fill("Die");
-    await page.locator(".topic-body").first().getByRole("button", { name: "Check" }).first().click();
+    // Scope to the specific exercise ("newspaper", answer "Die") so tapping
+    // "Die" can't accidentally hit a different exercise's tile.
+    const exercise = page.locator("p", { hasText: "Zeitung liegt auf dem Tisch" }).locator("..");
+    await expect(page.locator(".topic-body input[type='text']")).toHaveCount(0);
+    await exercise.getByRole("button", { name: "Die", exact: true }).click();
     await expect(page.locator(".feedback-banner.ok").first()).toBeVisible();
   });
 
@@ -68,7 +75,7 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
     await expect(page.getByText(/local-only mode/i)).toBeVisible();
   });
 
-  await test.step("/abc: replay controls exist and speak() fires when a question appears", async () => {
+  await test.step("/abc: FSRS card practice — flip, grade, and speak() fires", async () => {
     // Spy on speechSynthesis.speak before the next navigation so app code
     // picks up the wrapped version — guards against the regression where
     // audio silently stopped firing when a setTimeout wrapper was removed.
@@ -83,11 +90,12 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
       }
     });
     await page.goto("/abc");
-    await page.getByRole("button", { name: /Quiz starten/ }).click();
-    await expect(page.getByRole("button", { name: /Nochmal hören/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: /Langsam/ })).toBeVisible();
+    await expect(page.locator(".flip-scene")).toBeVisible();
+    await page.getByRole("button", { name: "Show answer" }).click();
+    await expect(page.locator(".flip-inner")).toHaveClass(/flipped/);
+    await page.getByRole("button", { name: "Good", exact: true }).click();
     const speakCalls = await page.evaluate(() => (window as unknown as { __speakCalls: string[] }).__speakCalls.length);
-    expect(speakCalls, "speechSynthesis.speak should fire when a quiz question appears").toBeGreaterThan(0);
+    expect(speakCalls, "speechSynthesis.speak should fire when an abc card appears").toBeGreaterThan(0);
   });
 
   expect(pageErrors, `unexpected page errors: ${pageErrors.map((e) => e.message).join("; ")}`).toEqual([]);

@@ -12,6 +12,7 @@ import {
   isItemSnoozed,
   snoozeSpeakingItem,
   SPEAKING_SKIP_AFTER_FAILS,
+  isAbcTurn,
   type Adaptation,
 } from "../lib/adapt";
 import { CORE_SKILLS, type LearnerModel, type SkillStats } from "../lib/model";
@@ -313,5 +314,33 @@ describe("speaking skip/snooze", () => {
 
   it("exposes the fail threshold as a named constant", () => {
     expect(SPEAKING_SKIP_AFTER_FAILS).toBe(3);
+  });
+});
+
+describe("isAbcTurn — ABC/vocab question mixing ratio", () => {
+  it("alternates roughly half the time before abc:done", () => {
+    const turns = Array.from({ length: 10 }, (_, i) => isAbcTurn(i, false));
+    expect(turns).toEqual([true, false, true, false, true, false, true, false, true, false]);
+    expect(turns.filter(Boolean).length).toBe(5); // exactly half of 10
+  });
+
+  it("sprinkles 1-in-4 after abc:done", () => {
+    const turns = Array.from({ length: 12 }, (_, i) => isAbcTurn(i, true));
+    expect(turns).toEqual([
+      true, false, false, false,
+      true, false, false, false,
+      true, false, false, false,
+    ]);
+    expect(turns.filter(Boolean).length).toBe(3); // 1 in 4 of 12
+  });
+
+  it("is false for negative indices (defensive — before the rotation starts)", () => {
+    expect(isAbcTurn(-1, false)).toBe(false);
+    expect(isAbcTurn(-1, true)).toBe(false);
+  });
+
+  it("always starts on an abc turn at index 0, done or not", () => {
+    expect(isAbcTurn(0, false)).toBe(true);
+    expect(isAbcTurn(0, true)).toBe(true);
   });
 });

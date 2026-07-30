@@ -244,3 +244,20 @@ export function snoozeSpeakingItem(itemId: string, now = Date.now()): void {
   for (const id of Object.keys(map)) if (map[id] <= today) delete map[id]; // opportunistic cleanup
   save("speaking:snoozed", map);
 }
+
+// ---------------------------------------------------------------------
+// 4. Listening — mixing in ABC sound->spelling questions
+// ---------------------------------------------------------------------
+
+/**
+ * Decides, for the Nth post-drill listening question (0-based), whether it
+ * should be an ABC question instead of a vocab-word one. Before the
+ * learner has finished a full /abc session, ABC questions alternate in
+ * roughly half the time; afterwards they're an occasional 1-in-4 sprinkle
+ * for retention. Pure and deterministic — the only randomness is in which
+ * specific item gets shown, decided by the caller.
+ */
+export function isAbcTurn(turnIndex: number, abcDone: boolean): boolean {
+  if (turnIndex < 0) return false;
+  return abcDone ? turnIndex % 4 === 0 : turnIndex % 2 === 0;
+}

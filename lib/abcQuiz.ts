@@ -23,6 +23,9 @@ export interface QuizOption {
 }
 
 export interface QuizQuestion {
+  /** The source QuizItem's id — used as the telemetry itemId when this
+   *  question is mixed into /listening (see lib/adapt.ts's isAbcTurn). */
+  id: string;
   correct: string;
   correctEn: string;
   options: QuizOption[];
@@ -42,7 +45,7 @@ export function buildQuizQuestion(item: QuizItem): QuizQuestion {
     { text: item.correct, realWord: true },
     ...item.decoys.map((d) => ({ text: d.text, realWord: !!d.realWord })),
   ]);
-  return { correct: item.correct, correctEn: item.correctEn, options };
+  return { id: item.id, correct: item.correct, correctEn: item.correctEn, options };
 }
 
 export function buildQuizQuestions(pool: QuizItem[]): QuizQuestion[] {

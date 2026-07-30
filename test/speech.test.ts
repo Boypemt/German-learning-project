@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { normalize, similarity } from "../lib/speech";
+import { normalize, similarity, pickBestVoice, type VoiceOption } from "../lib/speech";
 
 describe("normalize", () => {
   it("lowercases", () => {
@@ -54,5 +54,54 @@ describe("similarity", () => {
 
   it("is case- and umlaut-insensitive", () => {
     expect(similarity("Ich bin müde", "ICH BIN MUEDE")).toBe(1);
+  });
+});
+
+describe("pickBestVoice", () => {
+  const remote: VoiceOption = { voiceURI: "remote-1", name: "Google Deutsch", lang: "de-DE", localService: false };
+  const local: VoiceOption = { voiceURI: "local-1", name: "Microsoft Katja", lang: "de-DE", localService: true };
+  const localAustrian: VoiceOption = { voiceURI: "local-2", name: "Microsoft Hannah", lang: "de-AT", localService: true };
+  const english: VoiceOption = { voiceURI: "en-1", name: "Samantha", lang: "en-US", localService: true };
+
+  it("prefers a localService voice over a remote one", () => {
+    const voices = [remote, local];
+    expect(pickBestVoice(voices, "de-DE")).toBe(local);
+  });
+
+  it("honours a stored preference over the localService default", () => {
+    const voices = [remote, local];
+    expect(pickBestVoice(voices, "de-DE", "remote-1")).toBe(remote);
+  });
+
+  it("ignores a stored preference that isn't in the list, falling back to localService", () => {
+    const voices = [remote, local];
+    expect(pickBestVoice(voices, "de-DE", "does-not-exist")).toBe(local);
+  });
+
+  it("ignores a stored preference for a different language", () => {
+    const voices = [remote, local, english];
+    expect(pickBestVoice(voices, "de-DE", "en-1")).toBe(local);
+  });
+
+  it("falls back to the first matching voice when none are localService", () => {
+    const remote2: VoiceOption = { voiceURI: "remote-2", name: "Google Deutsch 2", lang: "de-DE", localService: false };
+    const voices = [remote, remote2];
+    expect(pickBestVoice(voices, "de-DE")).toBe(remote);
+  });
+
+  it("matches by language prefix regardless of region/case", () => {
+    const voices = [localAustrian, english];
+    expect(pickBestVoice(voices, "de-DE")).toBe(localAustrian);
+    expect(pickBestVoice(voices, "DE-de")).toBe(localAustrian);
+  });
+
+  it("never matches a voice for a different language", () => {
+    const voices = [english];
+    expect(pickBestVoice(voices, "de-DE")).toBeUndefined();
+  });
+
+  it("falls back sanely with an empty voice list", () => {
+    expect(pickBestVoice([], "de-DE")).toBeUndefined();
+    expect(pickBestVoice([], "de-DE", "some-uri")).toBeUndefined();
   });
 });

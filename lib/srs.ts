@@ -23,6 +23,7 @@ export interface VocabItem {
   exampleEn?: string;
   emoji?: string; // picture hint for concrete words (mostly A1/A2)
   img?: string; // photo path (merged from data/de/images.json manifest)
+  tip?: string; // optional memory aid ("Eselsbrücke") — mnemonic/cognate/word-building hint
   level: string; // CEFR
 }
 
@@ -49,16 +50,19 @@ export function getCardStore(lang = "de"): CardStore {
   return loadStore(lang);
 }
 
-export interface QueueResult {
-  due: VocabItem[]; // learned cards due for review
-  fresh: VocabItem[]; // never-seen items
+export interface QueueResult<T> {
+  due: T[]; // learned cards due for review
+  fresh: T[]; // never-seen items
 }
 
-export function buildQueue(
+/** Generic over any deck of {id}-bearing items — vocab, abc letters, etc. —
+ *  as long as they're scheduled under their own `lang` (FSRS store key), so
+ *  different decks' due dates never mix. */
+export function buildQueue<T extends { id: string }>(
   lang: string,
-  deck: VocabItem[],
+  deck: T[],
   newPerSession = 10
-): QueueResult {
+): QueueResult<T> {
   const store = loadStore(lang);
   const now = new Date();
   const due = deck.filter((it) => store[it.id] && store[it.id].due <= now);
@@ -75,7 +79,7 @@ export function review(lang: string, itemId: string, grade: Grade): Date {
   return result.card.due;
 }
 
-export function stats(lang: string, deck: VocabItem[]) {
+export function stats<T extends { id: string }>(lang: string, deck: T[]) {
   const store = loadStore(lang);
   const now = new Date();
   const seen = deck.filter((it) => store[it.id]);

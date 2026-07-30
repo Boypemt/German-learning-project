@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import Nav from "@/components/Nav";
 import SyncProvider from "@/components/SyncProvider";
+import SpeechWarmup from "@/components/SpeechWarmup";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <SyncProvider />
+        <SpeechWarmup />
         <Nav />
         <main className="container">{children}</main>
         <footer className="site-footer">

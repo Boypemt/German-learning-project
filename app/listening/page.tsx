@@ -5,13 +5,17 @@ import { getSentences, getVocabDeck, findVocabById, type Sentence } from "@/lib/
 import type { VocabItem } from "@/lib/srs";
 import { loadProfile } from "@/lib/profile";
 import { getLearnerModel } from "@/lib/model";
-import { getAdaptation, chooseListeningOptions, type ConfusionDrillPair } from "@/lib/adapt";
+import { getAdaptation, chooseListeningOptions, isAbcTurn, type ConfusionDrillPair } from "@/lib/adapt";
+import { buildQuizQuestions, type QuizItem, type QuizQuestion } from "@/lib/abcQuiz";
+import abcQuizData from "@/data/de/abc-quiz.json";
 import Umlauts from "@/components/Umlauts";
 import { speak, normalize, similarity } from "@/lib/speech";
-import { recordActivity } from "@/lib/storage";
+import { load, recordActivity } from "@/lib/storage";
 import { logEvent } from "@/lib/telemetry";
 import { praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
+
+const abcQuizPool = abcQuizData as QuizItem[];
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -33,13 +37,27 @@ function WordDiff({ target, attempt }: { target: string; attempt: string }) {
   );
 }
 
+/** The current beginner-mode question, normalized across its three
+ *  possible sources (confusion drill, mixed-in ABC question, plain vocab
+ *  word) so the rest of the render logic doesn't need to branch on source. */
+interface CurrentQuestion {
+  itemId: string;
+  spoken: string;
+  correct: string;
+  en: string;
+  emoji?: string;
+  level?: string;
+}
+
 export default function ListeningPage() {
   const [beginner, setBeginner] = useState(false);
   const [order, setOrder] = useState<Sentence[]>([]);
   const [fullDeck, setFullDeck] = useState<VocabItem[]>([]);
   const [wordQueue, setWordQueue] = useState<VocabItem[]>([]);
-  const [options, setOptions] = useState<VocabItem[]>([]);
-  const [selected, setSelected] = useState<VocabItem | null>(null);
+  const [abcQueue, setAbcQueue] = useState<QuizQuestion[]>([]);
+  const [abcDoneFlag, setAbcDoneFlag] = useState(false);
+  const [options, setOptions] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string | null>(null);
   const [idx, setIdx] = useState(0);
   const [val, setVal] = useState("");
   const [checked, setChecked] = useState(false);
@@ -65,6 +83,8 @@ export default function ListeningPage() {
       const withEmoji = deck.filter((d) => d.emoji);
       setFullDeck(deck);
       setWordQueue(shuffle(withEmoji.length >= 8 ? withEmoji : deck));
+      setAbcQueue(buildQuizQuestions(abcQuizPool));
+      setAbcDoneFlag(load("abc:done", false));
       if (profile) {
         const model = getLearnerModel(profile);
         setAccuracy7d(model.perSkill.listening.accuracy7d);
@@ -81,26 +101,57 @@ export default function ListeningPage() {
     .map((p) => findVocabById(p.itemId))
     .filter((v): v is VocabItem => !!v);
   const isDrill = beginner && idx < drillTargets.length;
-  const target = beginner
-    ? isDrill
-      ? drillTargets[idx]
-      : wordQueue.length > 0
-      ? wordQueue[(idx - drillTargets.length) % wordQueue.length]
-      : null
-    : null;
+  const postDrillIdx = idx - drillTargets.length;
+  const isAbcQuestion = beginner && !isDrill && abcQueue.length > 0 && isAbcTurn(postDrillIdx, abcDoneFlag);
 
   // Build (and speak) a fresh, stable set of options whenever a new beginner
   // question loads — never regenerated just because `selected` changes.
   useEffect(() => {
-    if (!beginner || !target) return;
-    const sameLevel = fullDeck.filter((d) => d.level === target.level && d.id !== target.id);
-    const pool = sameLevel.length >= 3 ? sameLevel : fullDeck.filter((d) => d.id !== target.id);
-    const forced = isDrill ? [findVocabById(drillPairs[idx].pickedId)].filter((v): v is VocabItem => !!v) : [];
-    setOptions(chooseListeningOptions(target, pool, accuracy7d, forced));
+    if (!beginner) return;
+    if (isDrill) {
+      const t = drillTargets[idx];
+      if (!t) return;
+      const sameLevel = fullDeck.filter((d) => d.level === t.level && d.id !== t.id);
+      const pool = sameLevel.length >= 3 ? sameLevel : fullDeck.filter((d) => d.id !== t.id);
+      const forced = [findVocabById(drillPairs[idx].pickedId)].filter((v): v is VocabItem => !!v);
+      setOptions(chooseListeningOptions(t, pool, accuracy7d, forced).map((v) => v.de));
+      setSelected(null);
+      speak(t.de);
+      return;
+    }
+    if (isAbcQuestion) {
+      const q = abcQueue[postDrillIdx % abcQueue.length];
+      if (!q) return;
+      setOptions(q.options.map((o) => o.text));
+      setSelected(null);
+      speak(q.correct);
+      return;
+    }
+    if (wordQueue.length === 0) return;
+    const t = wordQueue[postDrillIdx % wordQueue.length];
+    const sameLevel = fullDeck.filter((d) => d.level === t.level && d.id !== t.id);
+    const pool = sameLevel.length >= 3 ? sameLevel : fullDeck.filter((d) => d.id !== t.id);
+    setOptions(chooseListeningOptions(t, pool, accuracy7d, []).map((v) => v.de));
     setSelected(null);
-    speak(target.de);
+    speak(t.de);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idx, beginner, wordQueue, fullDeck, isDrill]);
+  }, [idx, beginner, wordQueue, fullDeck, isDrill, isAbcQuestion, abcQueue]);
+
+  // Normalizes whichever source is active into one shape the render below
+  // (and selectOption) can consume without caring where the question came from.
+  let current: CurrentQuestion | null = null;
+  if (beginner) {
+    if (isDrill && drillTargets[idx]) {
+      const t = drillTargets[idx];
+      current = { itemId: t.id, spoken: t.de, correct: t.de, en: t.en, emoji: t.emoji, level: t.level };
+    } else if (isAbcQuestion && abcQueue[postDrillIdx % abcQueue.length]) {
+      const q = abcQueue[postDrillIdx % abcQueue.length];
+      current = { itemId: q.id, spoken: q.correct, correct: q.correct, en: q.correctEn };
+    } else if (wordQueue.length > 0) {
+      const t = wordQueue[postDrillIdx % wordQueue.length];
+      current = { itemId: t.id, spoken: t.de, correct: t.de, en: t.en, emoji: t.emoji, level: t.level };
+    }
+  }
 
   const s = !beginner && order.length > 0 ? order[idx % order.length] : null;
   const sim = checked && s ? similarity(s.de, val) : 0;
@@ -118,18 +169,18 @@ export default function ListeningPage() {
     }
   }
 
-  function selectOption(opt: VocabItem) {
-    if (selected || !target) return;
-    setSelected(opt);
-    const ok = opt.id === target.id;
+  function selectOption(label: string) {
+    if (selected || !current) return;
+    setSelected(label);
+    const ok = label === current.correct;
     setAttempts((a) => a + 1);
     setLine(ok ? praise() : encourage());
-    speak(target.de);
-    logEvent("review", { skill: "listening", itemId: target.id, ok, ms: Date.now() - shownAtRef.current });
-    if (!ok) logEvent("choice_wrong", { itemId: target.id, pickedId: opt.id });
+    speak(current.spoken);
+    logEvent("review", { skill: "listening", itemId: current.itemId, ok, ms: Date.now() - shownAtRef.current });
+    if (!ok) logEvent("choice_wrong", { itemId: current.itemId, pickedId: label });
     if (ok) {
       setCorrect((c) => c + 1);
-      recordActivity("listening");
+      recordActivity("listening"); // ABC-sourced questions count as listening activity too
     }
   }
 
@@ -143,7 +194,7 @@ export default function ListeningPage() {
     }
   }
 
-  if (beginner ? (wordQueue.length === 0 || !target) : order.length === 0) {
+  if (beginner ? (wordQueue.length === 0 || !current) : order.length === 0) {
     return <p className="muted">Loading…</p>;
   }
 
@@ -159,33 +210,33 @@ export default function ListeningPage() {
               <span className="muted small"> (an extra round on words you often mix up)</span>
             </div>
           ) : (
-            <div className="progressbar"><div style={{ width: `${(((idx - drillTargets.length) % wordQueue.length) / wordQueue.length) * 100}%` }} /></div>
+            <div className="progressbar"><div style={{ width: `${((postDrillIdx % wordQueue.length) / wordQueue.length) * 100}%` }} /></div>
           )}
           <p className="muted small">
-            {isDrill ? "Opas Extrarunde" : <>Word {((idx - drillTargets.length) % wordQueue.length) + 1}/{wordQueue.length}</>} ·{" "}
-            <span className="badge">{target!.level}</span>
+            {isDrill ? "Opas Extrarunde" : isAbcQuestion ? "🔤 ABC" : <>Word {(postDrillIdx % wordQueue.length) + 1}/{wordQueue.length}</>}
+            {current!.level && <> · <span className="badge">{current!.level}</span></>}
             {attempts > 0 && <> · <span className="correct">{correct}</span>/{attempts} correct</>}
           </p>
 
           <div className="card">
             <div className="row" style={{ marginTop: 0 }}>
-              <button className="blue" onClick={() => speak(target!.de, "de-DE", 0.95)}>🔊 Play again</button>
-              <button onClick={() => speak(target!.de, "de-DE", 0.65)}>🐢 Slow</button>
+              <button className="blue" onClick={() => speak(current!.spoken, "de-DE", 0.95)}>🔊 Play again</button>
+              <button onClick={() => speak(current!.spoken, "de-DE", 0.65)}>🐢 Slow</button>
             </div>
             <p className="muted small center" style={{ marginTop: 0 }}>Which spelling matches what you heard?</p>
-            {!isDrill && accuracy7d < 0.6 && (
+            {!isDrill && !isAbcQuestion && accuracy7d < 0.6 && (
               <p className="muted small center">🎯 3 choices today — let's rebuild confidence.</p>
             )}
-            {!isDrill && accuracy7d >= 0.85 && (
+            {!isDrill && !isAbcQuestion && accuracy7d >= 0.85 && (
               <p className="muted small center">🧠 Trickier spellings today — you've earned it.</p>
             )}
             <div className="row" style={{ flexDirection: "column", alignItems: "stretch" }}>
-              {options.map((opt) => {
-                const isCorrect = opt.id === target!.id;
-                const cls = !selected ? "ghost" : isCorrect ? "good" : opt.id === selected.id ? "bad" : "ghost";
+              {options.map((label) => {
+                const isCorrect = label === current!.correct;
+                const cls = !selected ? "ghost" : isCorrect ? "good" : label === selected ? "bad" : "ghost";
                 return (
-                  <button key={opt.id} className={cls + " big"} disabled={!!selected} onClick={() => selectOption(opt)}>
-                    {opt.de}
+                  <button key={label} className={cls + " big"} disabled={!!selected} onClick={() => selectOption(label)}>
+                    {label}
                   </button>
                 );
               })}
@@ -193,12 +244,12 @@ export default function ListeningPage() {
 
             {selected && (
               <div className="center">
-                <div className={"feedback-banner " + (selected.id === target!.id ? "ok" : "no")}>
-                  👴 „{line[0]}“ {selected.id === target!.id ? "✓" : `— richtig: „${target!.de}“`}
+                <div className={"feedback-banner " + (selected === current!.correct ? "ok" : "no")}>
+                  👴 „{line[0]}“ {selected === current!.correct ? "✓" : `— richtig: „${current!.correct}“`}
                 </div>
                 <p style={{ margin: "6px 0" }}>
-                  {target!.emoji && <span style={{ fontSize: 30, marginRight: 8 }}>{target!.emoji}</span>}
-                  <span className="muted">{target!.en}</span>
+                  {current!.emoji && <span style={{ fontSize: 30, marginRight: 8 }}>{current!.emoji}</span>}
+                  <span className="muted">{current!.en}</span>
                 </p>
                 <div className="row">
                   <button className="primary" onClick={next}>Weiter →</button>

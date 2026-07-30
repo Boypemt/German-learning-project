@@ -9,6 +9,9 @@ import { buildQueue, review, Rating, type VocabItem } from "@/lib/srs";
 import { recordActivity } from "@/lib/storage";
 import { speak, getRecognition, normalize } from "@/lib/speech";
 import { logEvent } from "@/lib/telemetry";
+import {
+  getPersonalTip, setPersonalTip, getRecallPromptEnabled, setRecallPromptEnabled, checkRecall,
+} from "@/lib/tips";
 import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
 import { Opa, praise, encourage } from "@/components/Opa";
@@ -34,6 +37,12 @@ export default function VocabPage() {
   const [sayResult, setSayResult] = useState<"idle" | "listening" | "hit" | "miss">("idle");
   const [sayLine, setSayLine] = useState<[string, string]>(["", ""]);
   const [newCardTarget, setNewCardTarget] = useState(10);
+  const [recallEnabled, setRecallEnabled] = useState(true);
+  const [recallInput, setRecallInput] = useState("");
+  const [recallResult, setRecallResult] = useState<"idle" | "correct" | "wrong">("idle");
+  const [personalNote, setPersonalNote] = useState("");
+
+  useEffect(() => setRecallEnabled(getRecallPromptEnabled()), []);
 
   const loadSession = useCallback(() => {
     const profile = loadProfile();
@@ -97,8 +106,31 @@ export default function VocabPage() {
   useEffect(() => {
     if (item) speak(item.de);
     setSayResult("idle");
+    setRecallInput("");
+    setRecallResult("idle");
+    setPersonalNote(item ? getPersonalTip(item.id) : "");
     shownAtRef.current = Date.now();
   }, [item]);
+
+  // Optional recall check: shows ✓/✗ and reveals — never auto-grades,
+  // the learner still picks Again/Hard/Good/Easy themselves.
+  function checkRecallGuess() {
+    if (!item) return;
+    const ok = checkRecall(recallInput, item.en);
+    setRecallResult(ok ? "correct" : "wrong");
+    setRevealed(true);
+  }
+
+  function skipRecall() {
+    setRecallEnabled(false);
+    setRecallPromptEnabled(false);
+    setRevealed(true);
+  }
+
+  function updateNote(text: string) {
+    setPersonalNote(text);
+    if (item) setPersonalTip(item.id, text);
+  }
 
   // Optional practice: doesn't affect grading or activity counts.
   function sayIt() {
@@ -192,8 +224,29 @@ export default function VocabPage() {
             )}
             <div className="word say" title="🔊 anhören" onClick={() => speak(item.de)}>{item.de}</div>
             <button className="ghost" onClick={() => speak(item.de)}>🔊 Hear it again</button>
+            {!revealed && recallEnabled && (
+              <div style={{ width: "100%", marginTop: 10 }}>
+                <input
+                  type="text"
+                  placeholder="What does this word mean?"
+                  value={recallInput}
+                  onChange={(e) => setRecallInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && checkRecallGuess()}
+                  style={{ fontSize: 15 }}
+                />
+                <div className="row" style={{ marginTop: 8 }}>
+                  <button className="primary" onClick={checkRecallGuess}>Check & reveal</button>
+                  <button className="ghost" onClick={skipRecall}>Just show me</button>
+                </div>
+              </div>
+            )}
           </div>
-          <div className="flip-face back">
+          <div className="flip-face back" style={{ overflowY: "auto" }}>
+            {recallResult !== "idle" && (
+              <p className={(recallResult === "correct" ? "correct" : "wrong") + " small"} style={{ marginTop: 0 }}>
+                {recallResult === "correct" ? "✓ Your guess was right!" : "✗ Not quite what you guessed."}
+              </p>
+            )}
             <div className="word-sub">{item.en}</div>
             {item.example && (
               <p className="example">
@@ -213,14 +266,29 @@ export default function VocabPage() {
                 {sayResult === "miss" && <p className="wrong small">👴 „{sayLine[0]}“ — tap 🔊 and try again</p>}
               </>
             )}
+            <div style={{ width: "100%", marginTop: 8 }}>
+              <label className="muted small" style={{ display: "block", marginBottom: 4 }}>📝 Your note (optional)</label>
+              <input
+                type="text"
+                placeholder="Write your own memory trick…"
+                value={personalNote}
+                onChange={(e) => updateNote(e.target.value)}
+                style={{ fontSize: 14 }}
+              />
+            </div>
+            {item.tip && (
+              <p className="muted small" style={{ margin: "8px 0 0" }}>💡 Eselsbrücke: {item.tip}</p>
+            )}
           </div>
         </div>
       </div>
 
       {!revealed ? (
-        <button className="primary big" onClick={() => setRevealed(true)}>
-          Show answer
-        </button>
+        recallEnabled ? null : (
+          <button className="primary big" onClick={() => setRevealed(true)}>
+            Show answer
+          </button>
+        )
       ) : (
         <div className="row">
           <button className="bad" onClick={() => grade(Rating.Again)}>Again</button>
