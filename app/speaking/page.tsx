@@ -11,6 +11,7 @@ import { logEvent } from "@/lib/telemetry";
 import { isItemSnoozed, snoozeSpeakingItem, SPEAKING_SKIP_AFTER_FAILS } from "@/lib/adapt";
 import { praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
+import WordMatch from "@/components/WordMatch";
 
 function shuffle<T>(arr: T[]): T[] {
   return [...arr].sort(() => Math.random() - 0.5);
@@ -20,22 +21,6 @@ function shuffle<T>(arr: T[]): T[] {
 // judged on the word itself, article included or not.
 function stripArticle(de: string): string {
   return de.replace(/^(der|die|das)\s+/i, "");
-}
-
-function WordMatch({ target, heard }: { target: string; heard: string }) {
-  const heardSet = new Set(normalize(heard).split(" "));
-  return (
-    <p style={{ fontSize: 19, lineHeight: 1.9, margin: "10px 0" }}>
-      {target.split(" ").map((w, i) => {
-        const hit = heardSet.has(normalize(w));
-        return (
-          <span key={i} className={"diff-word " + (hit ? "hit" : "miss")} title="🔊 anhören" onClick={() => speak(w)}>
-            {w}
-          </span>
-        );
-      })}
-    </p>
-  );
 }
 
 export default function SpeakingPage() {

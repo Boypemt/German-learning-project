@@ -6,7 +6,7 @@
 // tap-to-hear reference grid stays for quick lookup (e.g. from the
 // Speaking page's "Full guide → /abc" link).
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import alphabetData from "@/data/de/alphabet.json";
 import { getAbcDeck, frontSpeech, type AbcCardItem } from "@/lib/abcDeck";
 import { buildQueue, review, Rating } from "@/lib/srs";
@@ -15,6 +15,7 @@ import { load, save, recordActivity } from "@/lib/storage";
 import { logEvent } from "@/lib/telemetry";
 import { Opa, OpaSays, praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
+import { useFlipHeight } from "@/lib/useFlipHeight";
 import type { Grade } from "ts-fsrs";
 
 interface AlphabetEntry {
@@ -71,6 +72,9 @@ export default function AbcPage() {
   useEffect(() => setHasRecognition(!!getRecognition()), []);
 
   const item = queue[0];
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
+  const flipHeight = useFlipHeight(frontRef, backRef, [item?.id]);
 
   const grade = useCallback((g: Grade) => {
     const it = queue[0];
@@ -197,13 +201,13 @@ export default function AbcPage() {
       <p className="muted small">{queue.length} left · {done} done</p>
 
       <div className="flip-scene">
-        <div className={"flip-inner" + (revealed ? " flipped" : "")}>
-          <div className="flip-face">
+        <div className={"flip-inner" + (revealed ? " flipped" : "")} style={flipHeight ? { height: flipHeight } : undefined}>
+          <div className="flip-face" ref={frontRef}>
             <span className="badge">{item.type}</span>
             <div className="word say" title="🔊 anhören" onClick={() => speak(frontSpeech(item))}>{item.symbol}</div>
             <button className="ghost" onClick={() => speak(frontSpeech(item))}>🔊 Hear it again</button>
           </div>
-          <div className="flip-face back">
+          <div className="flip-face back" ref={backRef}>
             <div className="word-sub">{item.soundEn}</div>
             <p className="muted small" style={{ margin: "2px 0 8px", textAlign: "center" }}>{item.sound}</p>
             {item.examples.map((ex, i) => (

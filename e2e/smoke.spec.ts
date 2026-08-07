@@ -41,6 +41,68 @@ test("A0 learner: interview -> dashboard -> vocab -> listening -> grammar -> gar
     await page.getByRole("button", { name: "Good", exact: true }).click();
   });
 
+  await test.step("/vocab: card back is fully visible, no clipping, at mobile width (360px)", async () => {
+    // Fake SpeechRecognition so the "Sag es!" buttons render and produce a
+    // result — used below to grow the back face (WordMatch + transcript)
+    // after it's already on screen, without needing a real mic/network.
+    await page.addInitScript(() => {
+      class FakeRecognition {
+        lang = "de-DE";
+        interimResults = false;
+        maxAlternatives = 1;
+        onresult: ((e: { results: { 0: { 0: { transcript: string } } } }) => void) | null = null;
+        onerror: (() => void) | null = null;
+        onend: (() => void) | null = null;
+        start() {
+          setTimeout(() => {
+            this.onresult?.({ results: { 0: { 0: { transcript: "haben" } } } as unknown as { 0: { 0: { transcript: string } } } });
+            this.onend?.();
+          }, 10);
+        }
+        stop() {}
+      }
+      (window as unknown as { SpeechRecognition: unknown }).SpeechRecognition = FakeRecognition;
+      (window as unknown as { webkitSpeechRecognition: unknown }).webkitSpeechRecognition = FakeRecognition;
+    });
+
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page.goto("/vocab");
+    await expect(page.locator(".flip-scene")).toBeVisible();
+    const skipRecall = page.getByRole("button", { name: "Just show me" });
+    if (await skipRecall.isVisible().catch(() => false)) {
+      await skipRecall.click();
+    } else {
+      await page.locator(".flip-scene").click();
+    }
+    await expect(page.locator(".flip-inner")).toHaveClass(/flipped/);
+
+    const back = page.locator(".flip-face.back");
+    await expect(back).toBeVisible();
+    // The old position:absolute layout gave the container the shorter
+    // (front) face's height, so a taller back face got an inner scrollbar
+    // and hid content. The height fix auto-sizes to the taller face, so
+    // nothing inside should overflow its own box.
+    const overflow = () => back.evaluate((el) => el.scrollHeight - el.clientHeight);
+    expect(await overflow(), "back face should not need an internal scrollbar").toBeLessThanOrEqual(1);
+
+    const wordBack = page.locator(".word-back");
+    await expect(wordBack).toBeVisible();
+    const wordBox = await wordBack.boundingBox();
+    const backBox = await back.boundingBox();
+    expect(wordBox, "German word on back face should have a bounding box").not.toBeNull();
+    expect(backBox, "back face should have a bounding box").not.toBeNull();
+    expect(wordBox!.y).toBeGreaterThanOrEqual(backBox!.y - 1);
+
+    // Now grow the back face AFTER it's already rendered: trigger "Sag es!"
+    // feedback (WordMatch + transcript line), which the ResizeObserver in
+    // useFlipHeight — not any dep array — is what must catch.
+    await page.getByRole("button", { name: "🎙️ Nur das Wort" }).click();
+    await expect(page.getByText("Recognized: „haben“")).toBeVisible();
+    expect(await overflow(), "back face should not overflow after Sag-es feedback grows it").toBeLessThanOrEqual(1);
+
+    await page.setViewportSize({ width: 1280, height: 800 });
+  });
+
   await test.step("beginner /listening shows multiple-choice spelling and answers one", async () => {
     await page.goto("/listening");
     await expect(page.getByText(/Which spelling matches/i)).toBeVisible();

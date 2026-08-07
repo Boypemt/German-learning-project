@@ -7,15 +7,18 @@ import { getLearnerModel } from "@/lib/model";
 import { newCardsPerSession } from "@/lib/adapt";
 import { buildQueue, review, Rating, type VocabItem } from "@/lib/srs";
 import { recordActivity } from "@/lib/storage";
-import { speak, getRecognition, normalize } from "@/lib/speech";
+import { speak, getRecognition, normalize, similarity } from "@/lib/speech";
 import { logEvent } from "@/lib/telemetry";
 import {
   getPersonalTip, setPersonalTip, getRecallPromptEnabled, setRecallPromptEnabled, checkRecall,
 } from "@/lib/tips";
+import { findBoldTarget, parseExampleForm } from "@/lib/exampleForm";
+import { useFlipHeight } from "@/lib/useFlipHeight";
 import { XP_PER_REVIEW } from "@/lib/gamify";
 import { COINS_PER_REVIEW } from "@/lib/garden";
 import { Opa, praise, encourage } from "@/components/Opa";
 import NextStepBanner from "@/components/NextStepBanner";
+import WordMatch from "@/components/WordMatch";
 import type { Grade } from "ts-fsrs";
 
 const CONFETTI = ["🎉", "⭐", "✨", "🎊", "💛"];
@@ -34,7 +37,10 @@ export default function VocabPage() {
   const [again, setAgain] = useState(0);
   const [ready, setReady] = useState(false);
   const [hasRecognition, setHasRecognition] = useState(false);
-  const [sayResult, setSayResult] = useState<"idle" | "listening" | "hit" | "miss">("idle");
+  const [sayMode, setSayMode] = useState<"word" | "sentence" | null>(null);
+  const [sayListening, setSayListening] = useState(false);
+  const [sayHeard, setSayHeard] = useState<string | null>(null);
+  const [sayOk, setSayOk] = useState(false);
   const [sayLine, setSayLine] = useState<[string, string]>(["", ""]);
   const [newCardTarget, setNewCardTarget] = useState(10);
   const [recallEnabled, setRecallEnabled] = useState(true);
@@ -64,6 +70,9 @@ export default function VocabPage() {
 
   const item = queue[0];
   const shownAtRef = useRef(Date.now());
+  const frontRef = useRef<HTMLDivElement>(null);
+  const backRef = useRef<HTMLDivElement>(null);
+  const flipHeight = useFlipHeight(frontRef, backRef, [item?.id]);
 
   const grade = useCallback((g: Grade) => {
     const it = queue[0];
@@ -105,7 +114,10 @@ export default function VocabPage() {
   // auto-pronounce each new word
   useEffect(() => {
     if (item) speak(item.de);
-    setSayResult("idle");
+    setSayMode(null);
+    setSayListening(false);
+    setSayHeard(null);
+    setSayOk(false);
     setRecallInput("");
     setRecallResult("idle");
     setPersonalNote(item ? getPersonalTip(item.id) : "");
@@ -132,21 +144,27 @@ export default function VocabPage() {
     if (item) setPersonalTip(item.id, text);
   }
 
-  // Optional practice: doesn't affect grading or activity counts.
-  function sayIt() {
+  // Optional practice: doesn't affect grading or activity counts. Two modes so
+  // the task is never ambiguous — say just the word, or (when there's an
+  // example) the whole sentence.
+  function sayIt(mode: "word" | "sentence") {
     if (!item) return;
     const rec = getRecognition("de-DE");
     if (!rec) return;
-    setSayResult("listening");
+    const target = mode === "sentence" && item.example ? item.example : stripArticle(item.de);
+    setSayMode(mode);
+    setSayListening(true);
+    setSayHeard(null);
     rec.onresult = (e) => {
       const heard = e.results[0][0].transcript;
-      const hit = normalize(heard).includes(normalize(stripArticle(item.de)));
-      setSayLine(hit ? praise() : encourage());
-      setSayResult(hit ? "hit" : "miss");
-      logEvent("sayit", { ok: hit });
+      const ok = mode === "sentence" ? similarity(target, heard) >= 0.8 : normalize(heard).includes(normalize(target));
+      setSayHeard(heard);
+      setSayOk(ok);
+      setSayLine(ok ? praise() : encourage());
+      logEvent("sayit", { ok, mode });
     };
-    rec.onerror = () => setSayResult("idle");
-    rec.onend = () => setSayResult((r) => (r === "listening" ? "idle" : r));
+    rec.onerror = () => setSayListening(false);
+    rec.onend = () => setSayListening(false);
     rec.start();
   }
 
@@ -213,8 +231,8 @@ export default function VocabPage() {
       )}
 
       <div className="flip-scene">
-        <div className={"flip-inner" + (revealed ? " flipped" : "")}>
-          <div className="flip-face">
+        <div className={"flip-inner" + (revealed ? " flipped" : "")} style={flipHeight ? { height: flipHeight } : undefined}>
+          <div className="flip-face" ref={frontRef}>
             <span className="badge">{item.level}</span>
             {item.img ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -241,30 +259,52 @@ export default function VocabPage() {
               </div>
             )}
           </div>
-          <div className="flip-face back" style={{ overflowY: "auto" }}>
+          <div className="flip-face back" ref={backRef}>
+            <div className="word-back say" title="🔊 anhören" onClick={() => speak(item.de)}>{item.de}</div>
             {recallResult !== "idle" && (
               <p className={(recallResult === "correct" ? "correct" : "wrong") + " small"} style={{ marginTop: 0 }}>
                 {recallResult === "correct" ? "✓ Your guess was right!" : "✗ Not quite what you guessed."}
               </p>
             )}
             <div className="word-sub">{item.en}</div>
-            {item.example && (
-              <p className="example">
-                <span className="say" title="🔊 anhören" onClick={() => speak(item.example!)}>„{item.example}“</span><br />
-                <span className="small">{item.exampleEn}</span>
-              </p>
-            )}
+            {item.example && (() => {
+              const { before, match, after } = findBoldTarget(item.example, item.exampleForm, item.de);
+              const gloss = item.exampleForm ? parseExampleForm(item.exampleForm)?.gloss : undefined;
+              return (
+                <p className="example">
+                  <span className="say" title="🔊 anhören" onClick={() => speak(item.example!)}>
+                    „{before}{match && <strong>{match}</strong>}{after}“
+                  </span><br />
+                  <span className="small">{item.exampleEn}</span>
+                  {gloss && <span className="example-form muted small" style={{ display: "block" }}>{gloss}</span>}
+                </p>
+              );
+            })()}
             {item.example && (
               <button className="ghost" onClick={() => speak(item.example!)}>🔊 Example</button>
             )}
             {hasRecognition && (
-              <>
-                <button className="blue" onClick={sayIt} disabled={sayResult === "listening"}>
-                  {sayResult === "listening" ? "🎙️ Listening…" : "🎙️ Sag es!"}
-                </button>
-                {sayResult === "hit" && <p className="correct small">👴 „{sayLine[0]}“ ✓</p>}
-                {sayResult === "miss" && <p className="wrong small">👴 „{sayLine[0]}“ — tap 🔊 and try again</p>}
-              </>
+              <div style={{ width: "100%" }}>
+                <div className="row">
+                  <button className="blue" onClick={() => sayIt("word")} disabled={sayListening}>
+                    {sayListening && sayMode === "word" ? "🎙️ Listening…" : "🎙️ Nur das Wort"}
+                  </button>
+                  {item.example && (
+                    <button className="blue" onClick={() => sayIt("sentence")} disabled={sayListening}>
+                      {sayListening && sayMode === "sentence" ? "🎙️ Listening…" : "🎙️ Ganzer Satz"}
+                    </button>
+                  )}
+                </div>
+                {sayHeard !== null && sayMode && (
+                  <div>
+                    <p className={(sayOk ? "correct" : "wrong") + " small"} style={{ marginBottom: 0 }}>
+                      👴 „{sayLine[0]}“ {sayOk ? "✓" : "— tap 🔊 and try again"}
+                    </p>
+                    <WordMatch target={sayMode === "sentence" ? item.example! : stripArticle(item.de)} heard={sayHeard} />
+                    <p className="muted small">Recognized: „{sayHeard}“</p>
+                  </div>
+                )}
+              </div>
             )}
             <div style={{ width: "100%", marginTop: 8 }}>
               <label className="muted small" style={{ display: "block", marginBottom: 4 }}>📝 Your note (optional)</label>

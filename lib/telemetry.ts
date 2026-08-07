@@ -19,7 +19,7 @@ interface EventPayloads {
   replay: { skill: string; slow?: boolean };
   skip: { skill: string; done: number; target: number };
   choice_wrong: { itemId: string; pickedId: string };
-  sayit: { ok: boolean };
+  sayit: { ok: boolean; mode?: "word" | "sentence" };
   session: { minutes: number };
 }
 

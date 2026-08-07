@@ -178,6 +178,15 @@ textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
 
 /* ---------- flashcard flip ---------- */
 .flip-scene { perspective: 1200px; margin: 14px 0; }
+/* Faces are position:absolute (no bottom/height constraint, so each keeps
+   its own natural content height for measurement) stacked over one
+   relatively-positioned container. A CSS Grid overlap (grid-area: 1/1 on
+   both faces) was tried so the container could auto-size to the taller
+   face, but that combination has a real paint bug in some engines: the
+   away-facing (backface-hidden) face still visually occluded the front of
+   the shown face instead of being skipped. So sizing is done in JS instead
+   — useFlipHeight (lib/useFlipHeight.ts) measures both faces' scrollHeight
+   and the page sets .flip-inner's height inline to the taller one. */
 .flip-inner {
   position: relative; width: 100%; min-height: 270px;
   transform-style: preserve-3d;
@@ -185,7 +194,7 @@ textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
 }
 .flip-inner.flipped { transform: rotateY(180deg); }
 .flip-face {
-  position: absolute; inset: 0;
+  position: absolute; top: 0; left: 0; width: 100%; min-height: 0;
   backface-visibility: hidden; -webkit-backface-visibility: hidden;
   background: var(--card);
   border: 2px solid var(--border); border-radius: 20px;
@@ -193,11 +202,17 @@ textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   padding: 24px; gap: 8px;
 }
-.flip-face.back { transform: rotateY(180deg); }
+.flip-face.back { transform: rotateY(180deg); justify-content: flex-start; }
+/* Belt-and-suspenders alongside backface-visibility: also drop the
+   non-shown face out of paint/hit-testing/tab-order explicitly. */
+.flip-inner:not(.flipped) .flip-face.back { visibility: hidden; }
+.flip-inner.flipped .flip-face:not(.back) { visibility: hidden; }
 
 .word { font-size: 36px; font-weight: 800; text-align: center; letter-spacing: -0.5px; }
 .word-sub { font-size: 22px; font-weight: 700; text-align: center; }
+.word-back { font-size: 24px; font-weight: 800; text-align: center; letter-spacing: -0.3px; }
 .example { text-align: center; color: var(--muted); font-style: italic; margin: 4px 0 0; }
+.example-form { text-align: center; margin: 2px 0 0; }
 
 /* ---------- progress ---------- */
 .progressbar {

@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { CEFR } from "../lib/content";
+import { parseExampleForm, findBoldTarget } from "../lib/exampleForm";
 
 import alphabet from "../data/de/alphabet.json";
 import abcQuiz from "../data/de/abc-quiz.json";
@@ -108,7 +109,7 @@ describe("data/de/vocab-*.json", () => {
     "vocab-c1.json": vocabC1,
     "vocab-c2.json": vocabC2,
   };
-  type VocabRow = { id: string; de: string; en: string; level: string };
+  type VocabRow = { id: string; de: string; en: string; level: string; example?: string; exampleForm?: string };
   const all = Object.values(files).flat() as VocabRow[];
 
   it("has required fields and a valid CEFR level on every item", () => {
@@ -123,6 +124,19 @@ describe("data/de/vocab-*.json", () => {
   });
 
   it("has unique ids across the whole combined deck", () => expectUniqueIds(all, "vocab-*.json combined"));
+
+  it("exampleForm parses and its word occurs in the example", () => {
+    for (const [file, items] of Object.entries(files)) {
+      for (const v of items as VocabRow[]) {
+        if (!v.exampleForm) continue;
+        expect(v.example, `example missing on ${v.id} in ${file} but exampleForm is set`).toBeTruthy();
+        const parsed = parseExampleForm(v.exampleForm);
+        expect(parsed, `exampleForm "${v.exampleForm}" on ${v.id} in ${file} failed to parse`).not.toBeNull();
+        const { match } = findBoldTarget(v.example!, v.exampleForm, v.de);
+        expect(match, `word "${parsed?.word}" from exampleForm not found in example "${v.example}" on ${v.id} in ${file}`).not.toBeNull();
+      }
+    }
+  });
 });
 
 describe("data/de/sentences-*.json", () => {

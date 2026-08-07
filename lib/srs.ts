@@ -21,6 +21,7 @@ export interface VocabItem {
   en: string;
   example?: string;
   exampleEn?: string;
+  exampleForm?: string; // inflected form as it appears in `example` + gloss, e.g. "bin (ich-form of sein)"
   emoji?: string; // picture hint for concrete words (mostly A1/A2)
   img?: string; // photo path (merged from data/de/images.json manifest)
   tip?: string; // optional memory aid ("Eselsbrücke") — mnemonic/cognate/word-building hint
